@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { loginDto, RegisterDto } from 'src/auth/auth.dto';
 import { User } from './user.schema';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -33,14 +34,22 @@ export class UserService {
     }
 
     async loginUser(loginDto: loginDto) {
+        const user = await this.userModel.findOne({ email: loginDto.email });
+        if (!user) throw new UnauthorizedException('Invalid Credentials');
+
+        const isPasswordValid = await bcrypt.compare(loginDto.password!, user.password);
+        if (!isPasswordValid) throw new UnauthorizedException('Invalid Credentials');
+
+        return user;
+    }
+
+    async getUserByEmail(email:string) {
         try {
-            const user = await this.userModel.findOne({ email: loginDto.email });
-            if(!user) throw new Error('User Not Found');
-            if(user.password !== loginDto.password) throw new Error('Invalid Password');
+            if(!email) throw new Error('Email is required');
+            const user = await this.userModel.findOne({ email });
             return user;
-        } catch (err) {
-            const e = err as {code?: number, message?: string}
-            throw new Error(e.message);
+        } catch (error) {
+            throw error;
         }
     }
 }

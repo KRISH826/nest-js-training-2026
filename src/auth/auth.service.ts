@@ -29,4 +29,9 @@ export class AuthService {
         const token = await this.jwtService.signAsync(payload);
         return {access_token: token};
     }
+
+    async userGetByEmail(email: string) {
+        const user = await this.userService.getUserByEmail(email);
+        return user;
+    }
 }
