@@ -8,9 +8,26 @@ import { User } from './user.schema';
 export class UserService {
     constructor(@InjectModel(User.name) private userModel: Model<User>) { }
     async createUser(registerDto: RegisterDto) {
-        await this.userModel.create(registerDto);
-        return {
-            message: 'User Created Successfully',
+        try {
+            const existUser = await this.userModel.findOne({ email: registerDto.email });
+            if(existUser) throw new Error('User Already Exists');
+    
+            if(!registerDto.fname || !registerDto.lname || !registerDto.email || !registerDto.password) throw new Error('All Fields Are Required');
+    
+            await this.userModel.create({
+                fname: registerDto.fname,
+                lname: registerDto.lname,
+                email: registerDto.email,
+                password: registerDto.password,
+                role: registerDto.role
+            });
+            return {
+                message: 'User Created Successfully',
+            }
+        } catch (err:unknown) {
+            const e = err as {code?: number, message?: string}
+            if(e.code === 11000) throw new Error('User Already Exists');
+            throw new Error(e.message);
         }
     }
 
