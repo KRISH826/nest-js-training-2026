@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { RegisterDto } from 'src/auth/auth.dto';
+import { loginDto, RegisterDto } from 'src/auth/auth.dto';
 import { User } from './user.schema';
 
 @Injectable()
@@ -32,9 +32,15 @@ export class UserService {
         }
     }
 
-    loginUser() {
-        return {
-            message: 'User Logged In Successfully',
+    async loginUser(loginDto: loginDto) {
+        try {
+            const user = await this.userModel.findOne({ email: loginDto.email });
+            if(!user) throw new Error('User Not Found');
+            if(user.password !== loginDto.password) throw new Error('Invalid Password');
+            return user;
+        } catch (err) {
+            const e = err as {code?: number, message?: string}
+            throw new Error(e.message);
         }
     }
 }
