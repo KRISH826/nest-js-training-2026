@@ -14,7 +14,7 @@ export class UserService {
     
             if(!registerDto.fname || !registerDto.lname || !registerDto.email || !registerDto.password) throw new Error('All Fields Are Required');
     
-            await this.userModel.create({
+            const user = await this.userModel.create({
                 fname: registerDto.fname,
                 lname: registerDto.lname,
                 email: registerDto.email,
@@ -23,6 +23,7 @@ export class UserService {
             });
             return {
                 message: 'User Created Successfully',
+                data: user
             }
         } catch (err:unknown) {
             const e = err as {code?: number, message?: string}

@@ -4,6 +4,6 @@ export class RegisterDto {
     fname?: string;
     lname?: string;
     email?: string;
-    password: string;
+    password?: string;
     role?: RoleType;
 }

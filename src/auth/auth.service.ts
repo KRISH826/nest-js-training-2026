@@ -13,12 +13,15 @@ export class AuthService {
     }
 
     async getRegister(registerDto: RegisterDto) {
-        const hash = await bcrypt.hash(registerDto.password, 10);
+        const password = registerDto.password;
+        if (!password) {
+            throw new Error('Password is required');
+        }
+        const hash = await bcrypt.hash(password, 10);
         const result = await this.userService.createUser({ ...registerDto, password: hash });
-        const payload = { role: registerDto.role, email: registerDto.email };
-        this.jwtService.signAsync({
-        
-        })
-        return result;
+        const created = result as RegisterDto;
+        const payload = { email: created.email, role: created.role };
+        const token = await this.jwtService.signAsync(payload);
+        return {access_token: token};
     }
 }
