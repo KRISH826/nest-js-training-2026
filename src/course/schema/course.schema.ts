@@ -21,3 +21,4 @@ export class Course {
 }
 
 export const CourseSchema = SchemaFactory.createForClass(Course);
+CourseSchema.index({ level: 1, price: 1 });

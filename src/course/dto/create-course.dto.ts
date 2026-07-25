@@ -1,4 +1,4 @@
-import { IsEmpty, IsString } from "class-validator";
+import { IsEmpty, IsNumber, IsString } from "class-validator";
 
 export class CreateCourseDto {
     @IsString()
@@ -10,7 +10,6 @@ export class CreateCourseDto {
     @IsString()
     level!: string;
 
-    @IsEmpty()
-    @IsString()
+    @IsNumber()
     price!: number;
 }
