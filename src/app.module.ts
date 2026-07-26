@@ -5,6 +5,8 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CourseModule } from './course/course.module';
+import { ChatStreamGateway } from './chat-stream/chat-stream.gateway';
 
 @Module({
   imports: [
@@ -18,8 +20,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         uri: configService.get<string>('MONGO_URL'),
       }),
     }),
+    CourseModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, ChatStreamGateway],
 })
 export class AppModule {}

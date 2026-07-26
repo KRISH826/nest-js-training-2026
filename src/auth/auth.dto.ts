@@ -20,3 +20,14 @@ export class loginDto {
     @IsString()
     password?: string;
 }
+
+export class UserDto {
+    @IsString()
+    fname?: string;
+    @IsString()
+    lname?: string;
+    @IsEmail()
+    email?: string;
+    @IsEnum(RoleType)
+    role?: RoleType;
+}
