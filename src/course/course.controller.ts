@@ -19,22 +19,31 @@ export class CourseController {
   }
 
   @Get()
-  findAll() {
-    return this.courseService.findAll();
+  async findAll() {
+    const courses = await this.courseService.findAll();
+    return courses;
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.courseService.findOne(+id);
+  @UseGuards(AuthGuard)
+  async findOne(@Param('id') id: string) {
+    const course = await this.courseService.findOne(id);
+    return course;
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard)
+  @Roles(RoleType.ADMIN)
   update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
-    return this.courseService.update(+id, updateCourseDto);
+    const course = this.courseService.update(id, updateCourseDto);
+    return course;
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.courseService.remove(+id);
+  @UseGuards(AuthGuard)
+  @Roles(RoleType.ADMIN)
+  async remove(@Param('id') id: string) {
+    const course = await this.courseService.remove(id);
+    return course;
   }
 }

@@ -32,15 +32,33 @@ export class CourseService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} course`;
+  async findOne(id: string) {
+    try {
+      const user = await this.courseModel.findOne({_id: id});
+      if(!user) throw new Error('User not found');
+      return user;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  update(id: number, updateCourseDto: UpdateCourseDto) {
-    return `This action updates a #${id} course`;
+  async update(id: string, updateCourseDto: UpdateCourseDto) {
+    try {
+      const course = await this.courseModel.findOneAndUpdate({_id: id}, updateCourseDto, {new: true});
+      if(!course) throw new Error('User not found');
+      return course;
+    } catch (error) {
+      throw error
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} course`;
+  async remove(id: string) {
+    try {
+      const user = await this.courseModel.findOneAndDelete({_id: id});
+      if(!user) throw new Error('User not found');
+      return user;
+    } catch (error) {
+      throw error
+    }
   }
 }
