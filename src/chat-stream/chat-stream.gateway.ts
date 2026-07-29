@@ -12,14 +12,15 @@ export class ChatStreamGateway implements OnGatewayConnection, OnGatewayDisconne
   private readonly ROOM = 'Coders Lounge';
 
   @SubscribeMessage('joinRoom')
-  async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() payload: string) {
-    console.log(`${payload} is joining the room`);
+  async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() username: string) {
+    client.data.username = username;
+    console.log(`${username} is joining the room`);
     await client.join(this.ROOM);
     this.server.to(this.ROOM).emit('roomNotice', {
-      username: payload,
-      message: `${payload} has joined the room`,
+      username: username,
+      message: `${username} has joined the room`,
     });
-    console.log('Recived', payload);
+    console.log('Recived', username);
   }
 
   @SubscribeMessage('messageList')
@@ -31,10 +32,10 @@ export class ChatStreamGateway implements OnGatewayConnection, OnGatewayDisconne
   @SubscribeMessage('chatMessage')
   async handleChatMessage(@ConnectedSocket() client: Socket, @MessageBody() payload: string) {
     this.server.to(this.ROOM).emit('chatMessage', {
-      username: client.id,
+      username: client.data.username,
       message: payload
     });
-    console.log(client.id ,":", payload);
+    console.log(client.data.username ,":", payload);
   }
 
   @SubscribeMessage('leaveRoom')
@@ -43,8 +44,14 @@ export class ChatStreamGateway implements OnGatewayConnection, OnGatewayDisconne
     await client.leave(this.ROOM);
   }
 
-  handleConnection(connect: any, ...args: any[]) {
-    console.log(`hello new connection ${connect.id}`)
+  handleConnection(client: Socket, ...args: any[]) {
+    const username = client.handshake.auth?.username;
+    if(username) {
+      client.data.username = username;
+      client.join(this.ROOM);
+      console.log(`${username} auto-joined on connect ${client.id}`);
+    }
+    console.log(`hello new connection ${client.id}`)
   }
   handleDisconnect(connect: any) {
     console.log(`hello new disconnection ${connect.id}`)
