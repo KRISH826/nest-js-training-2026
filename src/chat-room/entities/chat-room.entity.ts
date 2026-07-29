@@ -5,13 +5,13 @@ export type ChatRoomDocument = HydratedDocument<ChatRoom>;
 
 @Schema({ timestamps: true })
 export class ChatRoom {
-    @Prop({ required: true, unique: true })
+    @Prop({ required: true, unique: true, trim: true, maxlength: 50, minlength: 5 })
     name!: string;
 
-    @Prop()
+    @Prop({trim: true, maxlength: 255})
     description?: string;
 
-    @Prop({ required: true })
+    @Prop({ required: true, max: 50 })
     maxMembers!: number;
 
     @Prop({ default: true })
@@ -19,3 +19,4 @@ export class ChatRoom {
 }
 
 export const ChatRoomSchema = SchemaFactory.createForClass(ChatRoom);
+ChatRoomSchema.index({ name: 1 }, { unique: true });
