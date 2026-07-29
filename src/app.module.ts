@@ -7,6 +7,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CourseModule } from './course/course.module';
 import { ChatStreamGateway } from './chat-stream/chat-stream.gateway';
+import { ChatRoomModule } from './chat-room/chat-room.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ChatStreamGateway } from './chat-stream/chat-stream.gateway';
       }),
     }),
     CourseModule,
+    ChatRoomModule,
   ],
   controllers: [AppController],
   providers: [AppService, ChatStreamGateway],
