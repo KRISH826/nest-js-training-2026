@@ -8,7 +8,7 @@ import { ChatRoom } from './entities/chat-room.entity';
 @Injectable()
 export class ChatRoomService {
   constructor(@InjectModel(ChatRoom.name) private chatroomModel: Model<ChatRoom>) { }
-  async create(createChatRoomDto: CreateChatRoomDto) {
+  async create(createChatRoomDto: CreateChatRoomDto, userId: string) {
     try {
       const existChatRoom = await this.chatroomModel.findOne({ name: createChatRoomDto.name });
       if (existChatRoom) {
@@ -17,54 +17,66 @@ export class ChatRoomService {
       if(!createChatRoomDto.name || !createChatRoomDto.description || !createChatRoomDto.maxMembers) {
         throw new Error('All fields are required');
       }
-      const chatRoom = await this.chatroomModel.create(createChatRoomDto);
+      const chatRoom = await this.chatroomModel.create({
+        ...createChatRoomDto,
+        createdBy: userId
+      });
       return chatRoom;
     } catch (error) {
       throw error
     }
   }
 
-  async findAll() {
+  async findAll(userId: string) {
     try {
-      const chatRooms = await this.chatroomModel.find();
+      const chatRooms = await this.chatroomModel.find({ createdBy: userId });
       return chatRooms;
     } catch (error) {
       throw error
     }
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId: string) {
     try {
       const existCharRoom = await this.chatroomModel.findOne({ _id: id });
       if (!existCharRoom) {
         throw new Error('ChatRoom not found');
       }
+      if(existCharRoom.createdBy.toString() !== userId) throw new Error(
+        'You are not authorized to view this chat room'
+      )
       return existCharRoom;
     } catch (error) {
       throw error
     }
   }
 
-  update(id: string, updateChatRoomDto: UpdateChatRoomDto) {
+  async update(id: string, updateChatRoomDto: UpdateChatRoomDto, userId: string) {
     try {
-      const existChatRoom = this.chatroomModel.findOne({ _id: id });
+      const existChatRoom = await this.chatroomModel.findOne({ _id: id });
       if (!existChatRoom) {
         throw new Error('ChatRoom not found');
       }
-      const chatRoom = this.chatroomModel.findOneAndUpdate({ _id: id }, updateChatRoomDto, { new: true });
+      if(existChatRoom.createdBy.toString() !== userId) throw new Error(
+        'You are not authorized to update this chat room'
+      )
+      const chatRoom = await this.chatroomModel.findOneAndUpdate({ _id: id }, updateChatRoomDto, { new: true });
       return chatRoom;
     } catch (error) {
       throw error
     }
   }
 
-  remove(id: string) {
+  async remove(id: string, userId: string) {
     try {
-      const existChatRoom = this.chatroomModel.findOne({ _id: id });
+      const existChatRoom = await this.chatroomModel.findOne({ _id: id });
       if (!existChatRoom) {
         throw new Error('ChatRoom not found');
       }
-      const chatRoom = this.chatroomModel.findOneAndDelete({ _id: id });
+      if(existChatRoom.createdBy.toString() !== userId) throw new Error(
+        'You are not authorized to delete this chat room'
+      )
+      const chatRoom = await this.chatroomModel.findOneAndDelete({ _id: id });
       return chatRoom;
     } catch (error) {
       throw error

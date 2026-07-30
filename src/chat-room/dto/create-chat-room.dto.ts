@@ -10,7 +10,4 @@ export class CreateChatRoomDto {
 
     @IsNumber()
     maxMembers!: number;
-
-    @IsBoolean()
-    active!: boolean;
 }
