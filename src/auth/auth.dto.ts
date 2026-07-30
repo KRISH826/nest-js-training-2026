@@ -28,6 +28,4 @@ export class UserDto {
     lname?: string;
     @IsEmail()
     email?: string;
-    @IsEnum(RoleType)
-    role?: RoleType;
 }

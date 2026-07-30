@@ -6,10 +6,10 @@ import { UserService } from 'src/user/user.service';
 
 @Controller('auth')
 export class AuthController {
-    authService: AuthService;
-    constructor(authService: AuthService, userService: UserService) {
-        this.authService = authService;
-    }
+    constructor(
+        private readonly authService: AuthService,
+        private readonly userService: UserService,
+    ) {}
 
     @Post('login')
     login(@Body() loginDto: loginDto) {
@@ -31,7 +31,6 @@ export class AuthController {
             fname: user.fname,
             lname: user.lname,
             email: user.email,
-            role: user.role
         };
     }
 }
