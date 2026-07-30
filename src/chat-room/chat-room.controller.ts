@@ -11,7 +11,7 @@ export class ChatRoomController {
   @Post()
   @UseGuards(AuthGuard)
   async create(@Body() createChatRoomDto: CreateChatRoomDto, @Req() req: Request) {
-    const userId = req['user'].id;
+    const userId = req['user'].sub;
     const chatRoom = await this.chatRoomService.create(createChatRoomDto, userId);
     return {
       data: chatRoom,
@@ -22,7 +22,7 @@ export class ChatRoomController {
   @Get()
   @UseGuards(AuthGuard)
   async findAll(@Req() req: Request) {
-    const userId = req['user'].id;
+    const userId = req['user'].sub;
     const chatRooms = await this.chatRoomService.findAll(userId);
     return {
       data: chatRooms,
@@ -33,7 +33,7 @@ export class ChatRoomController {
   @Get(':id')
   @UseGuards(AuthGuard)
   async findOne(@Param('id') id: string, @Req() req: Request) {
-    const userId = req['user'].id;
+    const userId = req['user'].sub;
     const chatRoom = await this.chatRoomService.findOne(id, userId);
     return {
       data: chatRoom,
@@ -44,7 +44,7 @@ export class ChatRoomController {
   @Patch(':id')
   @UseGuards(AuthGuard)
   async update(@Param('id') id: string, @Body() updateChatRoomDto: UpdateChatRoomDto, @Req() req: Request) {
-    const userId = req['user'].id;
+    const userId = req['user'].sub;
     const chatRoom = await this.chatRoomService.update(id, updateChatRoomDto, userId);
     return {
       data: chatRoom,
@@ -55,7 +55,7 @@ export class ChatRoomController {
   @Delete(':id')
   @UseGuards(AuthGuard)
   async remove(@Param('id') id: string, @Req() req: Request) {
-    const userId = req['user'].id;
+    const userId = req['user'].sub;
     const chatRoom = await this.chatRoomService.remove(id, userId);
     return {
       data: chatRoom,
