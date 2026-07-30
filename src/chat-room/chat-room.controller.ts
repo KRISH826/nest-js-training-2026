@@ -8,27 +8,30 @@ export class ChatRoomController {
   constructor(private readonly chatRoomService: ChatRoomService) {}
 
   @Post()
-  create(@Body() createChatRoomDto: CreateChatRoomDto) {
-    return this.chatRoomService.create(createChatRoomDto);
+  async create(@Body() createChatRoomDto: CreateChatRoomDto) {
+    const chatRoom = await this.chatRoomService.create(createChatRoomDto);
+    return chatRoom;
   }
 
   @Get()
-  findAll() {
-    return this.chatRoomService.findAll();
+  async findAll() {
+    const chatRooms = await this.chatRoomService.findAll();
+    return chatRooms;
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.chatRoomService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    const chatRoom = await this.chatRoomService.findOne(id);
+    return chatRoom;
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateChatRoomDto: UpdateChatRoomDto) {
-    return this.chatRoomService.update(+id, updateChatRoomDto);
+    const chatRoom = this.chatRoomService.update(id, updateChatRoomDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.chatRoomService.remove(+id);
+    return this.chatRoomService.remove(id);
   }
 }

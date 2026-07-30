@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import { HydratedDocument, Types } from "mongoose";
 
 export type ChatRoomDocument = HydratedDocument<ChatRoom>;
 
@@ -16,6 +16,9 @@ export class ChatRoom {
 
     @Prop({ default: true })
     active!: boolean;
+
+    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+    createdBy!: Types.ObjectId;
 }
 
 export const ChatRoomSchema = SchemaFactory.createForClass(ChatRoom);
