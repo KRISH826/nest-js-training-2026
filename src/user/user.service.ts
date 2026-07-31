@@ -20,7 +20,6 @@ export class UserService {
                 lname: registerDto.lname,
                 email: registerDto.email,
                 password: registerDto.password,
-                role: registerDto.role
             });
             return {
                 message: 'User Created Successfully',

@@ -10,8 +10,6 @@ export class RegisterDto {
     email?: string;
     @IsString()
     password?: string;
-    @IsEnum(RoleType)
-    role?: RoleType;
 }
 
 export class loginDto {
@@ -28,6 +26,4 @@ export class UserDto {
     lname?: string;
     @IsEmail()
     email?: string;
-    @IsEnum(RoleType)
-    role?: RoleType;
 }

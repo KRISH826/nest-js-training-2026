@@ -7,10 +7,11 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CourseModule } from './course/course.module';
 import { ChatStreamGateway } from './chat-stream/chat-stream.gateway';
+import { ChatRoomModule } from './chat-room/chat-room.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
-    AuthModule, UserModule, 
     ConfigModule.forRoot({
       isGlobal: true
     }),
@@ -20,7 +21,11 @@ import { ChatStreamGateway } from './chat-stream/chat-stream.gateway';
         uri: configService.get<string>('MONGO_URL'),
       }),
     }),
+    RedisModule,
+    AuthModule, 
+    UserModule, 
     CourseModule,
+    ChatRoomModule
   ],
   controllers: [AppController],
   providers: [AppService, ChatStreamGateway],
