@@ -2,9 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { RedisService } from './redis.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-
-
-export const REDIS_CLIENT = 'REDIS_CLIENT';
+import { REDIS_CLIENT } from './redis.constants';
 
 @Global()
 @Module({
@@ -19,7 +17,7 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
                 password: configService.get<string>('REDIS_PASSWORD') || undefined,
                 db: configService.get<number>('REDIS_DB') || 0,
                 tls: configService.get('REDIS_TLS') === 'true' ? {} : undefined,
-                retryStrategy: (times) => Math.min(times * 200, 5000), // backoff, cap at 5s
+                retryStrategy: (times) => Math.min(times * 200, 5000),
                 maxRetriesPerRequest: 3,
                 enableReadyCheck: true,
             })
