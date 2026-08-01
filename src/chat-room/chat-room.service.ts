@@ -115,7 +115,10 @@ export class ChatRoomService {
       if (room.members.length >= room.maxMembers) throw new ForbiddenException('ChatRoom is full');
       room.members.push(new Types.ObjectId(userId));
       await room.save();
-      await this.redisService.del(`chatroom:${roomId}`); // 👈 cache invalidat
+      await Promise.all([
+        this.redisService.del(`chatroom:${roomId}`),
+        this.redisService.del(`chatrooms:${room.createdBy.toString()}`), // owner ka list cache
+      ]);
       return room;
     } catch (error) {
       throw error;
@@ -128,7 +131,10 @@ export class ChatRoomService {
       if (!room || !room.active) throw new NotFoundException('ChatRoom not found');
       room.members = room.members.filter(member => member.toString() !== userId);
       await room.save();
-      await this.redisService.del(`chatroom:${roomId}`); // 👈 cache invalidat
+      await Promise.all([
+        this.redisService.del(`chatroom:${roomId}`),
+        this.redisService.del(`chatrooms:${room.createdBy.toString()}`), // owner ka list cache
+      ]);
       return room;
     } catch (error) {
       throw error;
