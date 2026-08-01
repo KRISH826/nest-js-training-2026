@@ -2,7 +2,7 @@ import { ConflictException, ForbiddenException, Injectable, NotFoundException } 
 import { CreateChatRoomDto } from './dto/create-chat-room.dto';
 import { UpdateChatRoomDto } from './dto/update-chat-room.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { ChatRoom } from './entities/chat-room.entity';
 import { RedisService } from 'src/redis/redis.service';
 import { NotFoundError } from 'rxjs';
@@ -53,8 +53,8 @@ export class ChatRoomService {
       const cacheKey = `chatroom:${id}`;
       const cachedChatRoom = await this.redisService.getOrSet<ChatRoom | null>(cacheKey, async () => {
         const chatRoom = await this.chatroomModel.findById(id);
-        if(!chatRoom) throw new NotFoundException('ChatRoom not found');
-        if(chatRoom.createdBy.toString() !== userId) throw new ForbiddenException(
+        if (!chatRoom) throw new NotFoundException('ChatRoom not found');
+        if (chatRoom.createdBy.toString() !== userId) throw new ForbiddenException(
           'You are not authorized to view this chat room'
         )
         return chatRoom;
@@ -104,4 +104,35 @@ export class ChatRoomService {
       throw error
     }
   }
+
+  // join room
+  async joinRoom(roomId: string, userId: string) {
+    try {
+      const room = await this.chatroomModel.findById(roomId);
+      if (!room || !room.active) throw new NotFoundException('ChatRoom not found');
+      const alreadyMember = room.members.find(member => member.toString() === userId);
+      if (alreadyMember) throw new ForbiddenException('You are already a member of this chat room');
+      if (room.members.length >= room.maxMembers) throw new ForbiddenException('ChatRoom is full');
+      room.members.push(new Types.ObjectId(userId));
+      await room.save();
+      await this.redisService.del(`chatroom:${roomId}`); // 👈 cache invalidat
+      return room;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async leaveRoom(roomId: string, userId: string) {
+    try {
+      const room = await this.chatroomModel.findById(roomId);
+      if (!room || !room.active) throw new NotFoundException('ChatRoom not found');
+      room.members = room.members.filter(member => member.toString() !== userId);
+      await room.save();
+      await this.redisService.del(`chatroom:${roomId}`); // 👈 cache invalidat
+      return room;
+    } catch (error) {
+      throw error;
+    }
+  }
+
 }

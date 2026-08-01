@@ -19,7 +19,12 @@ export class ChatRoom {
 
     @Prop({ type: Types.ObjectId, ref: 'User', required: true })
     createdBy!: Types.ObjectId;
+
+    @Prop({ type: Types.ObjectId, ref: 'User', default: [] })
+    members!: Types.ObjectId[];
 }
 
 export const ChatRoomSchema = SchemaFactory.createForClass(ChatRoom);
 ChatRoomSchema.index({ name: 1 }, { unique: true });
+ChatRoomSchema.index({ active: 1 });
+ChatRoomSchema.index({ members: 1 });
