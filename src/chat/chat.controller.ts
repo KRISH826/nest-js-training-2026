@@ -15,18 +15,21 @@ export class ChatController {
     const chat = await this.chatService.create(createChatDto, senderId);
     return {
       data: chat,
-      message: "Chat created successfully"
+    message: "Chat created successfully"
     }
   }
 
   @Get("room/:chatRoomId")
   async findByRoom(
     @Param('chatRoomId') chatRoomId: string,
+    @Req() req: Request,
     @Query('limit') limit?: string,
     @Query('before') before?: string
   ) {
+    const userId = req['user'].sub;
     const messages = await this.chatService.findByRoom(
       chatRoomId,
+      userId,
       limit ? parseInt(limit, 10) : undefined,
       before
     )
