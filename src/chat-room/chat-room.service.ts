@@ -26,7 +26,7 @@ export class ChatRoomService {
       }
       const chatRoom = await this.chatroomModel.create({
         ...createChatRoomDto,
-        createdBy: userId
+        createdBy: new Types.ObjectId(userId),
       });
       await this.redisService.del(`chatrooms:${userId}`);
       return chatRoom;
@@ -110,6 +110,7 @@ export class ChatRoomService {
     try {
       const room = await this.chatroomModel.findById(roomId);
       if (!room || !room.active) throw new NotFoundException('ChatRoom not found');
+      if(room.createdBy.toString() === userId) throw new ForbiddenException('You cannot join your own chat room');
       const alreadyMember = room.members.find(member => member.toString() === userId);
       if (alreadyMember) throw new ForbiddenException('You are already a member of this chat room');
       if (room.members.length >= room.maxMembers) throw new ForbiddenException('ChatRoom is full');

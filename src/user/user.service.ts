@@ -15,12 +15,12 @@ export class UserService {
     
             if(!registerDto.fname || !registerDto.lname || !registerDto.email || !registerDto.password) throw new Error('All Fields Are Required');
     
-            const user = await this.userModel.create({
+            const user = await (await this.userModel.create({
                 fname: registerDto.fname,
                 lname: registerDto.lname,
                 email: registerDto.email,
                 password: registerDto.password,
-            });
+            })).populate('createdBy', '-password');
             return {
                 message: 'User Created Successfully',
                 data: user
@@ -33,7 +33,7 @@ export class UserService {
     }
 
     async loginUser(loginDto: loginDto) {
-        const user = await this.userModel.findOne({ email: loginDto.email });
+        const user = await this.userModel.findOne({ email: loginDto.email }).populate('createdBy', '-password');
         if (!user) throw new UnauthorizedException('Invalid Credentials');
 
         const isPasswordValid = await bcrypt.compare(loginDto.password!, user.password);
@@ -45,7 +45,17 @@ export class UserService {
     async getUserByEmail(email:string) {
         try {
             if(!email) throw new Error('Email is required');
-            const user = await this.userModel.findOne({ email });
+            const user = await this.userModel.findOne({ email }).populate('createdBy', '-password');
+            return user;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async logOutUser(userId: string) {
+        try {
+            const user = await this.userModel.findById(userId).populate('createdBy', '-password');
+            if(!user) throw new Error('User not found');
             return user;
         } catch (error) {
             throw error;
