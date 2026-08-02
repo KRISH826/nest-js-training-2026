@@ -15,7 +15,7 @@ export class ChatController {
     const chat = await this.chatService.create(createChatDto, senderId);
     return {
       data: chat,
-      message: "Chat created successfully"
+    message: "Chat created successfully"
     }
   }
 
