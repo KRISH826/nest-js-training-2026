@@ -34,6 +34,7 @@ export class ChatService {
 
   async findByRoom(chatRoomId: string, limit = 30, before?: string) {
     try {
+      
       const query: any = { chatRoom: chatRoomId, deleted: false };
       if (before) {
         const beforeMsg = await this.chatModel.findById(before);
