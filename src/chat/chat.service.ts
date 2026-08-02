@@ -4,12 +4,23 @@ import { UpdateChatDto } from './dto/update-chat.dto';
 import { Chat } from './entities/chat.entity';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
+import { ChatRoom } from 'src/chat-room/entities/chat-room.entity';
 
 @Injectable()
 export class ChatService {
-  constructor(@InjectModel(Chat.name) private chatModel: Model<Chat>) { }
+  constructor(@InjectModel(Chat.name) private chatModel: Model<Chat>, 
+  @InjectModel(ChatRoom.name) private chatRoomModel: Model<ChatRoom>) { }
   async create(createChatDto: CreateChatDto, senderId: string) {
     try {
+      const chatRoom = await this.chatRoomModel.findById(createChatDto.chatRoom);
+      if(!chatRoom) {
+        throw new NotFoundException('ChatRoom not found');
+      }
+      const isOwner = chatRoom.createdBy.toString() === senderId;
+      const memberId = chatRoom.members.find((id: any) => id.toString() === senderId);
+      if(!isOwner && !memberId) {
+        throw new NotFoundException('You are not a member of this chat room');
+      }
       const chat = await this.chatModel.create({
         chatRoom: createChatDto.chatRoom,
         sender: senderId,

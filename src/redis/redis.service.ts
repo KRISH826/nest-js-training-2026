@@ -72,6 +72,9 @@ export class RedisService implements OnModuleDestroy {
                 this.inFlightRequests.delete(key);
                 throw error;
             }
+            finally {
+                this.inFlightRequests.delete(key);
+            }
         })();
 
         this.inFlightRequests.set(key, promise);
