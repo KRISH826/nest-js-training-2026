@@ -32,9 +32,17 @@ export class ChatService {
     }
   }
 
-  async findByRoom(chatRoomId: string, limit = 30, before?: string) {
+  async findByRoom(chatRoomId: string, userId: string, limit = 30, before?: string) {
     try {
-      
+      const room = await this.chatRoomModel.findById(chatRoomId);
+      if(!room) {
+        throw new NotFoundException('ChatRoom not found');
+      }
+      const isOwner = room.createdBy.toString() === userId;
+      const memberId = room.members.find((id: any) => id.toString() === userId);
+      if(!isOwner && !memberId) {
+        throw new NotFoundException('You are not a member of this chat room');
+      }
       const query: any = { chatRoom: chatRoomId, deleted: false };
       if (before) {
         const beforeMsg = await this.chatModel.findById(before);
