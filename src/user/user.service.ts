@@ -33,7 +33,7 @@ export class UserService {
     }
 
     async loginUser(loginDto: loginDto) {
-        const user = await this.userModel.findOne({ email: loginDto.email });
+        const user = await this.userModel.findOne({ email: loginDto.email }).select('+password');
         if (!user) throw new UnauthorizedException('Invalid Credentials');
 
         const isPasswordValid = await bcrypt.compare(loginDto.password!, user.password);
@@ -46,6 +46,17 @@ export class UserService {
         try {
             if(!email) throw new Error('Email is required');
             const user = await this.userModel.findOne({ email });
+            return user;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+
+    async logOutUser(userId: string) {
+        try {
+            const user = await this.userModel.findById(userId);
+            if(!user) throw new Error('User not found');
             return user;
         } catch (error) {
             throw error;

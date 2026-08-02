@@ -2,10 +2,9 @@ import { ConflictException, ForbiddenException, Injectable, NotFoundException } 
 import { CreateChatRoomDto } from './dto/create-chat-room.dto';
 import { UpdateChatRoomDto } from './dto/update-chat-room.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { ChatRoom } from './entities/chat-room.entity';
 import { RedisService } from 'src/redis/redis.service';
-import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class ChatRoomService {
@@ -26,7 +25,7 @@ export class ChatRoomService {
       }
       const chatRoom = await this.chatroomModel.create({
         ...createChatRoomDto,
-        createdBy: userId
+        createdBy: new Types.ObjectId(userId),
       });
       await this.redisService.del(`chatrooms:${userId}`);
       return chatRoom;
@@ -50,16 +49,20 @@ export class ChatRoomService {
 
   async findOne(id: string, userId: string) {
     try {
-      const cacheKey = `chatroom:${id}`;
-      const cachedChatRoom = await this.redisService.getOrSet<ChatRoom | null>(cacheKey, async () => {
-        const chatRoom = await this.chatroomModel.findById(id);
-        if(!chatRoom) throw new NotFoundException('ChatRoom not found');
-        if(chatRoom.createdBy.toString() !== userId) throw new ForbiddenException(
-          'You are not authorized to view this chat room'
-        )
-        return chatRoom;
-      })
-      return cachedChatRoom;
+      const chatRoom = await this.redisService.getOrSet<ChatRoom | null>(`chatroom:${id}`, async () => {
+        return await this.chatroomModel.findById(id);
+      });
+      if (!chatRoom) throw new NotFoundException('ChatRoom not found');
+
+      // ✅ Authorization Check AFTER cache retrieval
+      const isOwner = chatRoom.createdBy.toString() === userId;
+      const isMember = chatRoom.members?.some((m) => m.toString() === userId);
+
+      if (!isOwner && !isMember) {
+        throw new ForbiddenException('You are not authorized to view this chat room');
+      }
+
+      return chatRoom;
     } catch (error) {
       throw error
     }
@@ -71,7 +74,7 @@ export class ChatRoomService {
       if (!existChatRoom) {
         throw new Error('ChatRoom not found');
       }
-      if (existChatRoom.createdBy.toString() !== userId) throw new Error(
+      if (existChatRoom.createdBy.toString() !== userId) throw new ForbiddenException(
         'You are not authorized to update this chat room'
       )
       const chatRoom = await this.chatroomModel.findOneAndUpdate({ _id: id }, updateChatRoomDto, { new: true });
@@ -91,8 +94,8 @@ export class ChatRoomService {
       if (!existChatRoom) {
         throw new Error('ChatRoom not found');
       }
-      if (existChatRoom.createdBy.toString() !== userId) throw new Error(
-        'You are not authorized to delete this chat room'
+      if (existChatRoom.createdBy.toString() !== userId) throw new ForbiddenException(
+        'You are not authorized to update this chat room'
       )
       const chatRoom = await this.chatroomModel.findOneAndDelete({ _id: id });
       await Promise.all([
@@ -104,4 +107,44 @@ export class ChatRoomService {
       throw error
     }
   }
+
+  // join room
+  async joinRoom(roomId: string, userId: string) {
+    try {
+      const room = await this.chatroomModel.findById(roomId);
+      if (!room || !room.active) throw new NotFoundException('ChatRoom not found');
+      if (room.createdBy.toString() === userId) throw new ForbiddenException('You cannot join your own chat room');
+      const alreadyMember = room.members.find(member => member.toString() === userId);
+      if (alreadyMember) throw new ForbiddenException('You are already a member of this chat room');
+      if (room.members.length >= room.maxMembers) throw new ForbiddenException('ChatRoom is full');
+      room.members.push(new Types.ObjectId(userId));
+      await room.save();
+      await Promise.all([
+        this.redisService.del(`chatroom:${roomId}`),
+        this.redisService.del(`chatrooms:${room.createdBy.toString()}`), // owner ka list cache
+      ]);
+      return room;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async leaveRoom(roomId: string, userId: string) {
+    try {
+      const room = await this.chatroomModel.findById(roomId);
+      if (!room || !room.active) throw new NotFoundException('ChatRoom not found');
+      const wasMember = room.members.some(member => member.toString() === userId);
+      if (!wasMember) throw new ForbiddenException('You are not a member of this chat room');
+      room.members = room.members.filter(member => member.toString() !== userId);
+      await room.save();
+      await Promise.all([
+        this.redisService.del(`chatroom:${roomId}`),
+        this.redisService.del(`chatrooms:${room.createdBy.toString()}`), // owner ka list cache
+      ]);
+      return room;
+    } catch (error) {
+      throw error;
+    }
+  }
+
 }

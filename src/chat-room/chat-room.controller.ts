@@ -52,6 +52,28 @@ export class ChatRoomController {
     };
   }
 
+  @Post(':id/join')
+  @UseGuards(AuthGuard)
+  async joinRoom(@Param('id') id: string, @Req() req: Request) {
+    const userId = req['user'].sub;
+    const chatRoom = await this.chatRoomService.joinRoom(id, userId);
+    return {
+      data: chatRoom,
+      message: "Joined Chat Room Successfully"
+    }
+  }
+
+  @Post(':id/leave')
+  @UseGuards(AuthGuard)
+  async leaveRoom(@Param('id') id: string, @Req() req: Request) {
+    const userId = req['user'].sub;
+    const chatRoom = await this.chatRoomService.leaveRoom(id, userId);
+    return {
+      data: chatRoom,
+      message: "Left Chat Room Successfully"
+    }
+  }
+
   @Delete(':id')
   @UseGuards(AuthGuard)
   async remove(@Param('id') id: string, @Req() req: Request) {
