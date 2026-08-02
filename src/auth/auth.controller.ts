@@ -33,4 +33,15 @@ export class AuthController {
             email: user.email,
         };
     }
+
+    @UseGuards(AuthGuard)
+    @Post('logout')
+    async logout(@Req() req: Request) {
+        const userId = req['user'].sub;
+        const result = await this.authService.userLogOut(userId);
+        return {
+            message: 'User logged out successfully',
+            data: result,
+        };
+    }
 }
