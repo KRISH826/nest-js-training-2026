@@ -1,7 +1,10 @@
 import { JwtService } from '@nestjs/jwt';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { connect } from 'mongoose';
 import { Server, Socket } from 'socket.io';
 import { jwtConstants } from 'src/auth/constants';
+import { ChatService } from 'src/chat/chat.service';
+import { RedisService } from 'src/redis/redis.service';
 
 @WebSocketGateway({
   cors: {
@@ -12,7 +15,9 @@ export class ChatStreamGateway implements OnGatewayConnection, OnGatewayDisconne
   @WebSocketServer()
   server!: Server;
 
-  constructor(private readonly jwtService: JwtService) { }
+  constructor(private readonly jwtService: JwtService, 
+    private readonly chatService: ChatService, 
+    private readonly redisService: RedisService) { }
 
   async handleConnection(client: Socket) {
     try {
@@ -80,6 +85,40 @@ export class ChatStreamGateway implements OnGatewayConnection, OnGatewayDisconne
     return {
       status: 'success',
       message: `Left room ${roomId}`,
+    };
+  }
+
+  @SubscribeMessage('chatMessage')
+  async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() payload: { chatRoom: string, message: string }) {
+    const { chatRoom, message } = payload;
+    const user = client.data.user;
+
+    if(!chatRoom || !message) {
+      client.emit('error', { message: 'Room ID and message are required' });
+      return;
+    }
+
+    const savedChat = await this.chatService.create(
+      {
+        chatRoom: chatRoom,
+        message,
+      },
+      user.sub, // Sender's userId from JWT token
+    );
+
+    const chatData = {
+      senderId: savedChat._id,
+      senderEmail: user.email,
+      chatRoom: chatRoom,
+      message: message,
+      timestamp: new Date().toISOString(),
+    }
+    this.server.to(chatRoom).emit('newMessage', chatData);
+    console.log(`[Ws Authorization] User ${user.email} sent message to room ${chatRoom}: ${message}`);
+
+    return {
+      status: 'success',
+      chatData
     };
   }
 
