@@ -7,7 +7,7 @@ export type UserDocument = HydratedDocument<User>;
   timestamps: true,
   toJSON: {
     transform: (doc, ret: Record<string, any>) => {
-      const { password, __v, ...cleanUser } = ret;
+      const { refreshtoken, password, __v, ...cleanUser } = ret;
       return cleanUser;
     },
   },
@@ -24,6 +24,10 @@ export class User {
 
   @Prop({ required: true, select: false })
   password!: string;
+
+  @Prop({required: true, default: false})
+  refreshtoken!: string;
+  
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

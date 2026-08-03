@@ -52,10 +52,29 @@ export class UserService {
         }
     }
 
+    async getUserByidWithRefreshToken(userId: string) {
+        return await this.userModel.findById(userId).select('+refreshToken');
+    }
+
+    async updateRefreshToken(userId: string, refreshToken?: string) {
+        try {
+            if(refreshToken) {
+                const hash = await bcrypt.hash(refreshToken, 10);
+                refreshToken = hash;
+                await this.userModel.findByIdAndUpdate(userId, { refreshToken }, { new: true });
+            }else {
+                await this.userModel.findByIdAndUpdate(userId, { refreshToken: null }, { new: true });
+            }
+        } catch (error) {
+            throw error;
+        }
+    }
+
 
     async logOutUser(userId: string) {
         try {
             const user = await this.userModel.findById(userId);
+            await this.updateRefreshToken(userId, undefined);
             if(!user) throw new Error('User not found');
             return user;
         } catch (error) {
