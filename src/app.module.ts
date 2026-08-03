@@ -10,6 +10,7 @@ import { ChatStreamGateway } from './chat-stream/chat-stream.gateway';
 import { ChatRoomModule } from './chat-room/chat-room.module';
 import { RedisModule } from './redis/redis.module';
 import { ChatModule } from './chat/chat.module';
+import { ChatStreamModule } from './chat-stream/chat-stream.module';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { ChatModule } from './chat/chat.module';
     UserModule, 
     CourseModule,
     ChatRoomModule,
-    ChatModule
+    ChatModule,
+    ChatStreamModule
   ],
   controllers: [AppController],
   providers: [AppService, ChatStreamGateway],
