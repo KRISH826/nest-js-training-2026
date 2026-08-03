@@ -7,7 +7,7 @@ export type UserDocument = HydratedDocument<User>;
   timestamps: true,
   toJSON: {
     transform: (doc, ret: Record<string, any>) => {
-      const { refreshToken, password, __v, ...cleanUser } = ret;
+      const { refreshtoken, password, __v, ...cleanUser } = ret;
       return cleanUser;
     },
   },
