@@ -1,5 +1,10 @@
+import { JwtService } from '@nestjs/jwt';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { connect } from 'mongoose';
 import { Server, Socket } from 'socket.io';
+import { jwtConstants } from 'src/auth/constants';
+import { ChatService } from 'src/chat/chat.service';
+import { RedisService } from 'src/redis/redis.service';
 
 @WebSocketGateway({
   cors: {
@@ -9,51 +14,123 @@ import { Server, Socket } from 'socket.io';
 export class ChatStreamGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
-  private readonly ROOM = 'Coders Lounge';
+
+  constructor(private readonly jwtService: JwtService, 
+    private readonly chatService: ChatService, 
+    private readonly redisService: RedisService) { }
+
+  async handleConnection(client: Socket) {
+    try {
+      const token = client.handshake.auth?.token || client.handshake.headers.authorization?.split(' ')[1] || this.extractCookieToken(client.handshake.headers.cookie);
+
+      if(!token) {
+        console.log(`[Ws Authorization] No token provided for client ${client.id} -- missing token`);
+      }
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: jwtConstants.accessSecret!,
+      });
+      client.data.user = payload;
+      console.log(`[Ws Authorization] Client ${client.id} connected with user ${payload.email}`);
+    } catch (error) {
+      client.disconnect();
+      console.log(`[Ws Authorization] Client ${client.id} disconnected due to invalid token`);
+    }
+  }
+
+  handleDisconnect(client: Socket) {
+    console.log(`[Ws Authorization] Client ${client.id} disconnected`);
+  }
 
   @SubscribeMessage('joinRoom')
-  async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() username: string) {
-    client.data.username = username;
-    console.log(`${username} is joining the room`);
-    await client.join(this.ROOM);
-    this.server.to(this.ROOM).emit('roomNotice', {
-      username: username,
-      message: `${username} has joined the room`,
-    });
-    console.log('Recived', username);
-  }
+  async handleJoinRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { roomId: string }
+  ) {
+    const {roomId} = payload;
 
-  @SubscribeMessage('messageList')
-  async handleMessageList(@ConnectedSocket() client: Socket, @MessageBody() payload: string) {
-    this.server.to(this.ROOM).emit('messageList', payload);
-    console.log('Recived', payload);
-  }
-
-  @SubscribeMessage('chatMessage')
-  async handleChatMessage(@ConnectedSocket() client: Socket, @MessageBody() payload: string) {
-    this.server.to(this.ROOM).emit('chatMessage', {
-      username: client.data.username,
-      message: payload
+    const user = client.data.user;
+    if(!roomId) {
+      client.emit('error', { message: 'Room ID is required' });
+    }
+    await client.join(roomId);
+    console.log(`[Ws Authorization] User ${user.email} joined room ${roomId}`);
+    this.server.to(roomId).emit('roomNotice', {
+      user: user.email,
+      message: `${user.email} joined the room`,
+      timestamp: new Date().toISOString(),
     });
-    console.log(client.data.username ,":", payload);
+
+    return {
+      status: 'success',
+      message: `Joined room ${roomId}`,
+    }
   }
 
   @SubscribeMessage('leaveRoom')
-  async handleLeaveRoom(@ConnectedSocket() client: Socket, @MessageBody() payload: string) {
-    console.log(`${payload} is leaving the room`);
-    await client.leave(this.ROOM);
+  async handleLeaveRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { roomId: string }
+  ) {
+    const {roomId} = payload;
+
+    await client.leave(roomId);
+    const user = client.data.user;
+    console.log(`[Ws Authorization] User ${user.email} left room ${roomId}`);
+
+    this.server.to(roomId).emit('roomNotice', {
+      user: user.email,
+      message: `${user.email} left the room`,
+      timestamp: new Date().toISOString(),
+    });
+    return {
+      status: 'success',
+      message: `Left room ${roomId}`,
+    };
   }
 
-  handleConnection(client: Socket, ...args: any[]) {
-    const username = client.handshake.auth?.username;
-    if(username) {
-      client.data.username = username;
-      client.join(this.ROOM);
-      console.log(`${username} auto-joined on connect ${client.id}`);
+  @SubscribeMessage('chatMessage')
+  async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() payload: { chatRoom: string, message: string }) {
+    const { chatRoom, message } = payload;
+    const user = client.data.user;
+
+    if(!chatRoom || !message) {
+      client.emit('error', { message: 'Room ID and message are required' });
+      return;
     }
-    console.log(`hello new connection ${client.id}`)
+
+    const savedChat = await this.chatService.create(
+      {
+        chatRoom: chatRoom,
+        message,
+      },
+      user.sub, // Sender's userId from JWT token
+    );
+
+    const chatData = {
+      senderId: savedChat._id,
+      senderEmail: user.email,
+      chatRoom: chatRoom,
+      message: message,
+      timestamp: new Date().toISOString(),
+    }
+    this.server.to(chatRoom).emit('newMessage', chatData);
+    console.log(`[Ws Authorization] User ${user.email} sent message to room ${chatRoom}: ${message}`);
+
+    return {
+      status: 'success',
+      chatData
+    };
   }
-  handleDisconnect(connect: any) {
-    console.log(`hello new disconnection ${connect.id}`)
+
+
+  private extractCookieToken(cookieHeader?: string): string | undefined {
+    if (!cookieHeader) return undefined;
+    const cookies = Object.fromEntries(
+      cookieHeader.split('; ').map((c) => {
+        const [key, ...v] = c.split('=');
+        return [key.trim(), v.join('=')];
+      }),
+    );
+    return cookies['access_token'];
   }
 }
