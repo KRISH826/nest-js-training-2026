@@ -4,7 +4,7 @@ import { connect } from 'mongoose';
 import { Server, Socket } from 'socket.io';
 import { jwtConstants } from 'src/auth/constants';
 import { ChatService } from 'src/chat/chat.service';
-import { RedisService } from 'src/redis/redis.service';
+import { RedisService } from 'src/shared/redis/redis.service';
 
 @WebSocketGateway({
   cors: {
