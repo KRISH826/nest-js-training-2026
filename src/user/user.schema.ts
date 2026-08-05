@@ -25,6 +25,18 @@ export class User {
   @Prop({ required: true, select: false })
   password!: string;
 
+  @Prop({
+    type: {
+      public_id: { type: String, default: '' },
+      url: { type: String, default: '' },
+    },
+    default: null,
+  })
+  avatar?: {
+    public_id: string;
+    url: string;
+  };
+
   @Prop({required: true, default: false})
   refreshtoken!: string;
   
