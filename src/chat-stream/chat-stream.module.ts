@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ChatStreamGateway } from './chat-stream.gateway';
+import { ChatModule } from 'src/chat/chat.module';
 
 @Module({
+    imports: [ChatModule],
     providers: [ChatStreamGateway],
     exports: [ChatStreamGateway]
 })
