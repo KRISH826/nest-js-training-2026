@@ -76,7 +76,7 @@ export class ChatService {
         if (chat.sender.toString() !== userId) {
           throw new Error('You are not authorized to update this chat');
         }
-        const updatedChat = this.chatModel.findByIdAndUpdate(id, updateChatDto, { new: true });
+        const updatedChat = this.chatModel.findByIdAndUpdate(id, updateChatDto, { returnDocument: 'after' });
         return updatedChat
       } catch (error) {
         throw error
@@ -92,7 +92,7 @@ export class ChatService {
       if (chat.sender.toString() !== userId) {
         throw new Error('You are not authorized to delete this chat');
       }
-      const deletedChat = this.chatModel.findByIdAndUpdate(id, { deleted: true }, { new: true });
+      const deletedChat = this.chatModel.findByIdAndUpdate(id, { deleted: true }, { returnDocument: 'after' });
       return deletedChat;
     } catch (error) {
       throw error
