@@ -4,7 +4,7 @@ import { UpdateChatRoomDto } from './dto/update-chat-room.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ChatRoom } from './entities/chat-room.entity';
-import { RedisService } from 'src/redis/redis.service';
+import { RedisService } from 'src/shared/redis/redis.service';
 
 @Injectable()
 export class ChatRoomService {
