@@ -56,14 +56,34 @@ export class UserService {
         return await this.userModel.findById(userId).select('+refreshToken');
     }
 
+    async findUserById(userId: string) {
+        try {
+            if(!userId) throw new Error('User Id is required');
+            const user = await this.userModel.findById(userId);
+            return user;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateUser(userId: string, updateData: Partial<User>) {
+        try {
+            if(!userId) throw new Error('User Id is required');
+            const user = await this.userModel.findByIdAndUpdate(userId, updateData, { returnDocument: 'after' });
+            return user;
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async updateRefreshToken(userId: string, refreshToken?: string) {
         try {
             if(refreshToken) {
                 const hash = await bcrypt.hash(refreshToken, 10);
                 refreshToken = hash;
-                await this.userModel.findByIdAndUpdate(userId, { refreshToken }, { new: true });
+                await this.userModel.findByIdAndUpdate(userId, { refreshToken }, { returnDocument: 'after' });
             }else {
-                await this.userModel.findByIdAndUpdate(userId, { refreshToken: null }, { new: true });
+                await this.userModel.findByIdAndUpdate(userId, { refreshToken: null }, { returnDocument: 'after' });
             }
         } catch (error) {
             throw error;

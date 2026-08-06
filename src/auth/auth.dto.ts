@@ -1,5 +1,5 @@
 import { RoleType } from "src/enums/role.type";
-import { IsEmail, IsEnum, IsString } from "class-validator";
+import { IsEmail, IsEnum, IsOptional, IsString } from "class-validator";
 
 export class RegisterDto {
     @IsString()
@@ -26,4 +26,14 @@ export class UserDto {
     lname?: string;
     @IsEmail()
     email?: string;
+}
+
+export class UpdateProfileDto {
+    @IsOptional()
+    @IsString()
+    fname?: string
+    
+    @IsOptional()
+    @IsString()
+    lname?: string
 }

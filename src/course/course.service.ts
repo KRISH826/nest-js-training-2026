@@ -44,7 +44,7 @@ export class CourseService {
 
   async update(id: string, updateCourseDto: UpdateCourseDto) {
     try {
-      const course = await this.courseModel.findOneAndUpdate({_id: id}, updateCourseDto, {new: true});
+      const course = await this.courseModel.findOneAndUpdate({_id: id}, updateCourseDto, { returnDocument: 'after' });
       if(!course) throw new Error('User not found');
       return course;
     } catch (error) {

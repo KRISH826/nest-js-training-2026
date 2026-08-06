@@ -77,7 +77,7 @@ export class ChatRoomService {
       if (existChatRoom.createdBy.toString() !== userId) throw new ForbiddenException(
         'You are not authorized to update this chat room'
       )
-      const chatRoom = await this.chatroomModel.findOneAndUpdate({ _id: id }, updateChatRoomDto, { new: true });
+      const chatRoom = await this.chatroomModel.findOneAndUpdate({ _id: id }, updateChatRoomDto, { returnDocument: 'after' });
       await Promise.all([
         this.redisService.del(`chatroom:${id}`),
         this.redisService.del(`chatrooms:${userId}`),

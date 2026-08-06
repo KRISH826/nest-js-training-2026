@@ -42,6 +42,7 @@ export class CloudinaryService {
     });
   }
 
+
   extractPublicIdFromUrl(url: string): string | null {
     if (!url) return null;
     try {
