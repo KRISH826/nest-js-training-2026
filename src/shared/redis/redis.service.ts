@@ -45,7 +45,7 @@ export class RedisService implements OnModuleDestroy {
             const pipeline = this.client.pipeline();
             for await (const keys of stream) {
                 keys.forEach(key => {
-                    pipeline.del(key);
+                    pipeline.unlink(key);
                 });
             }
 
