@@ -1,15 +1,22 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, HttpCode, HttpStatus } from '@nestjs/common';
 import { ChatRoomService } from './chat-room.service';
 import { CreateChatRoomDto } from './dto/create-chat-room.dto';
 import { UpdateChatRoomDto } from './dto/update-chat-room.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { SWAGGER_AUTH_NAME, SWAGGER_TAGS } from 'src/common/swagger/swagger.constants';
+import { ApiCreateChatRoom, ApiFindAllChatRooms, ApiFindOneChatRoom, ApiUpdateChatRoom } from './chat-room.swagger';
 
+@ApiTags(SWAGGER_TAGS.CHAT_ROOM)
+@ApiBearerAuth(SWAGGER_AUTH_NAME)
 @Controller('chat-room')
+@UseGuards(AuthGuard)
 export class ChatRoomController {
   constructor(private readonly chatRoomService: ChatRoomService) {}
 
   @Post()
-  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiCreateChatRoom() // 👈 Clean custom decorator!
   async create(@Body() createChatRoomDto: CreateChatRoomDto, @Req() req: Request) {
     const userId = req['user'].sub;
     const chatRoom = await this.chatRoomService.create(createChatRoomDto, userId);
@@ -20,7 +27,8 @@ export class ChatRoomController {
   }
 
   @Get()
-  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiFindAllChatRooms() // 👈 Clean custom decorator!
   async findAll(@Req() req: Request) {
     const userId = req['user'].sub;
     const chatRooms = await this.chatRoomService.findAll(userId);
@@ -31,7 +39,8 @@ export class ChatRoomController {
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiFindOneChatRoom()
   async findOne(@Param('id') id: string, @Req() req: Request) {
     const userId = req['user'].sub;
     const chatRoom = await this.chatRoomService.findOne(id, userId);
@@ -42,7 +51,8 @@ export class ChatRoomController {
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiUpdateChatRoom()
   async update(@Param('id') id: string, @Body() updateChatRoomDto: UpdateChatRoomDto, @Req() req: Request) {
     const userId = req['user'].sub;
     const chatRoom = await this.chatRoomService.update(id, updateChatRoomDto, userId);
