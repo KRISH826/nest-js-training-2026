@@ -53,6 +53,7 @@ export class ChatRoomController {
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   @ApiUpdateChatRoom()
+
   async update(@Param('id') id: string, @Body() updateChatRoomDto: UpdateChatRoomDto, @Req() req: Request) {
     const userId = req['user'].sub;
     const chatRoom = await this.chatRoomService.update(id, updateChatRoomDto, userId);
