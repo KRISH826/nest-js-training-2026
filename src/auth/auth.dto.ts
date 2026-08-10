@@ -30,14 +30,6 @@ export class loginDto {
 }
 
 export class UserDto {
-    @ApiProperty({ example: 'John' })
-    @IsString()
-    fname?: string;
-
-    @ApiProperty({ example: 'Doe' })
-    @IsString()
-    lname?: string;
-
     @ApiProperty({ example: 'john.doe@example.com' })
     @IsEmail()
     email?: string;
