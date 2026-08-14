@@ -1,6 +1,6 @@
-import { Body, Controller, FileTypeValidator, ForbiddenException, Get, MaxFileSizeValidator, ParseFilePipe, Patch, Post, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, FileTypeValidator, ForbiddenException, Get, MaxFileSizeValidator, ParseFilePipe, Patch, Post, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { loginDto, RegisterDto, UpdateProfileDto, UserDto } from './auth.dto';
+import { loginDto, RegisterDto, SendOtpDto, UpdateProfileDto, UserDto, VerifyOtpDto } from './auth.dto';
 import { AuthGuard } from './auth.guard';
 import { UserService } from 'src/user/user.service';
 import express from 'express';
@@ -25,30 +25,46 @@ export class AuthController {
         });
     }
 
-    @Post('login')
-    async login(@Body() loginDto: loginDto, @Res({ passthrough: true }) res: express.Response) {
-        const result = await this.authService.getLogin(loginDto);
-        this.setAccessTokenCookie(res, result.access_token);
-        return {
-            message: 'User logged in successfully',
-            data: result,
-        };
+    @Post('send-otp')
+
+    async sendOtp(@Body() dto: SendOtpDto) {
+        try {
+            const otp = await this.authService.sendOtp(loginDto.email);
+            return otp
+        } catch (error) {
+            throw error
+        }
     }
 
-    @Post('register')
-    async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) res: express.Response) {
-        const result = await this.authService.getRegister(registerDto);
-        this.setAccessTokenCookie(res, result.access_token);
-        return {
-            message: 'User registered successfully',
-            data: result,
-        };
+
+    @Post('verify-otp')
+    async verifyOtp(@Body() dto: VerifyOtpDto, @Res({ passthrough: true }) res: express.Response) {
+        const email = dto.email;
+        const otp = dto.otp;
+        if(!email || !otp) {
+            throw new BadRequestException('Field is required');
+        }
+
+        try {
+            const result = await this.authService.verifyOtp(email, otp);
+            this.setAccessTokenCookie(res, result.access_token);
+            return {
+                message: 'OTP verified successfully',
+                redirectToProfileUpdate: !result.isProfileComplete,
+                data: result
+            };
+        } catch (error) {
+            throw error;
+        }
     }
+
+
+    
 
     @UseGuards(AuthGuard)
     @Post('logout')
     async logout(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response,) {
-        const userId = req['user'].sub;
+        const userId = req['user'].id;
         const result = await this.authService.userLogOut(userId);
         res.clearCookie('access_token');
         return {

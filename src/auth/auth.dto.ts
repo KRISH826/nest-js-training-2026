@@ -8,7 +8,7 @@ export class SendOtpDto {
     email?: string;
 }
 
-export class VerufyOtpDto {
+export class VerifyOtpDto {
     @ApiProperty({ example: 'john.doe@example.com' })
     @IsEmail()
     @IsNotEmpty()
@@ -30,4 +30,22 @@ export class UpdateProfileDto {
     @IsOptional()
     @IsString()
     lname?: string
+}
+export class UserDto {
+    @ApiProperty({ example: 'john.doe@example.com' })
+    @IsEmail()
+    @IsNotEmpty()
+    email?: string;
+
+    @ApiProperty({ example: 'John' })
+    @IsString()
+    fname?: string
+
+    @ApiProperty({ example: 'Doe' })
+    @IsString()
+    lname?: string
+
+    @ApiProperty({ example: 'email' })
+    @IsString()
+    provider?: string
 }
