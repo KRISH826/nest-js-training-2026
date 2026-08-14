@@ -1,46 +1,23 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
 
-export class RegisterDto {
-    @ApiProperty({ example: 'John' })
-    @IsString()
-    fname?: string;
-
-    @ApiProperty({ example: 'Doe' })
-    @IsString()
-    lname?: string;
-
+export class SendOtpDto {
     @ApiProperty({ example: 'john.doe@example.com' })
     @IsEmail()
+    @IsNotEmpty()
     email?: string;
-
-    @ApiProperty({ example: 'StrongPassword123!' })
-    @IsString()
-    password?: string;
 }
 
-export class loginDto {
+export class VerufyOtpDto {
     @ApiProperty({ example: 'john.doe@example.com' })
     @IsEmail()
+    @IsNotEmpty()
     email?: string;
 
-    @ApiProperty({ example: 'StrongPassword123!' })
+    @ApiProperty({ example: '123456' })
     @IsString()
-    password?: string;
-}
-
-export class UserDto {
-    @ApiProperty({ example: 'John' })
-    @IsString()
-    fname?: string;
-
-    @ApiProperty({ example: 'Doe' })
-    @IsString()
-    lname?: string;
-
-    @ApiProperty({ example: 'john.doe@example.com' })
-    @IsEmail()
-    email?: string;
+    @Length(6, 6)
+    otp?: string;
 }
 
 export class UpdateProfileDto {
