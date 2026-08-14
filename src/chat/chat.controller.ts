@@ -3,6 +3,7 @@ import { ChatService } from './chat.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
+import type { AuthenticatedRequest } from 'src/auth/auth.types';
 
 @Controller('chat')
 @UseGuards(AuthGuard)
@@ -10,8 +11,8 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) { }
 
   @Post()
-  async create(@Body() createChatDto: CreateChatDto, @Req() req: Request) {
-    const senderId = req['user'].sub;
+  async create(@Body() createChatDto: CreateChatDto, @Req() req: AuthenticatedRequest) {
+    const senderId = req.user.sub;
     const chat = await this.chatService.create(createChatDto, senderId);
     return {
       data: chat,
@@ -22,11 +23,11 @@ export class ChatController {
   @Get("room/:chatRoomId")
   async findByRoom(
     @Param('chatRoomId') chatRoomId: string,
-    @Req() req: Request,
+    @Req() req: AuthenticatedRequest,
     @Query('limit') limit?: string,
     @Query('before') before?: string
   ) {
-    const userId = req['user'].sub;
+    const userId = req.user.sub;
     const messages = await this.chatService.findByRoom(
       chatRoomId,
       userId,
@@ -43,7 +44,7 @@ export class ChatController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Req() req: Request) {
+  async findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const chat = await this.chatService.findOne(id);
     return {
       data: chat,
@@ -52,8 +53,8 @@ export class ChatController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateChatDto: UpdateChatDto, @Req() req: Request) {
-    const userId = req['user'].sub;
+  async update(@Param('id') id: string, @Body() updateChatDto: UpdateChatDto, @Req() req: AuthenticatedRequest) {
+    const userId = req.user.sub;
     const chat = await this.chatService.update(id, updateChatDto, userId);
     return {
       data: chat,
@@ -62,8 +63,8 @@ export class ChatController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string, @Req() req: Request) {
-    const userId = req['user'].sub;
+  async remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const userId = req.user.sub;
     const chat = await this.chatService.remove(id, userId);
     return {
       data: chat,

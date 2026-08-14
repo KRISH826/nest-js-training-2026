@@ -1,12 +1,13 @@
 import { BadRequestException, Body, Controller, FileTypeValidator, ForbiddenException, Get, MaxFileSizeValidator, ParseFilePipe, Patch, Post, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { loginDto, RegisterDto, SendOtpDto, UpdateProfileDto, UserDto, VerifyOtpDto } from './auth.dto';
+import { SendOtpDto, UpdateProfileDto, VerifyOtpDto } from './auth.dto';
 import { AuthGuard } from './auth.guard';
 import { UserService } from 'src/user/user.service';
 import express from 'express';
 import 'multer';
 import { CloudinaryService } from 'src/shared/cloudinary/cloudinary.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { AuthenticatedRequest } from './auth.types';
 
 @Controller('auth')
 export class AuthController {
@@ -29,7 +30,7 @@ export class AuthController {
 
     async sendOtp(@Body() dto: SendOtpDto) {
         try {
-            const otp = await this.authService.sendOtp(loginDto.email);
+            const otp = await this.authService.sendOtp(dto.email!);
             return otp
         } catch (error) {
             throw error
@@ -63,8 +64,8 @@ export class AuthController {
 
     @UseGuards(AuthGuard)
     @Post('logout')
-    async logout(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response,) {
-        const userId = req['user'].id;
+    async logout(@Req() req: AuthenticatedRequest, @Res({ passthrough: true }) res: express.Response,) {
+        const userId = req.user.sub;
         const result = await this.authService.userLogOut(userId);
         res.clearCookie('access_token');
         return {
@@ -75,8 +76,8 @@ export class AuthController {
 
     @UseGuards(AuthGuard)
     @Get('profile')
-    async getProfile(@Req() req: express.Request) {
-        const userId = req['user'].sub;
+    async getProfile(@Req() req: AuthenticatedRequest) {
+        const userId = req.user.sub;
         const user = await this.userService.findUserById(userId);
         if (!user) throw new Error('User Not Found');
         return {
@@ -89,7 +90,7 @@ export class AuthController {
     @UseInterceptors(FileInterceptor('avatar'))
     @Patch('profile')
     async updateProfile(
-        @Req() req: express.Request,
+        @Req() req: AuthenticatedRequest,
         @Body() updateProfileDto: UpdateProfileDto,
         @UploadedFile(
             new ParseFilePipe({
@@ -101,7 +102,7 @@ export class AuthController {
             }),
         ) file?: Express.Multer.File,
     ) {
-        const userId = req['user'].sub;
+        const userId = req.user.sub;
         let newAvatar: { public_id: string; url: string } | undefined = undefined;
 
         if (file) {

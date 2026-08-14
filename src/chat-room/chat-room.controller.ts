@@ -6,6 +6,7 @@ import { AuthGuard } from 'src/auth/auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { SWAGGER_AUTH_NAME, SWAGGER_TAGS } from 'src/common/swagger/swagger.constants';
 import { ApiCreateChatRoom, ApiFindAllChatRooms, ApiFindOneChatRoom, ApiUpdateChatRoom } from './chat-room.swagger';
+import type { AuthenticatedRequest } from 'src/auth/auth.types';
 
 @ApiTags(SWAGGER_TAGS.CHAT_ROOM)
 @ApiBearerAuth(SWAGGER_AUTH_NAME)
@@ -17,8 +18,8 @@ export class ChatRoomController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiCreateChatRoom() // 👈 Clean custom decorator!
-  async create(@Body() createChatRoomDto: CreateChatRoomDto, @Req() req: Request) {
-    const userId = req['user'].sub;
+  async create(@Body() createChatRoomDto: CreateChatRoomDto, @Req() req: AuthenticatedRequest) {
+    const userId = req.user.sub;
     const chatRoom = await this.chatRoomService.create(createChatRoomDto, userId);
     return {
       data: chatRoom,
@@ -29,8 +30,8 @@ export class ChatRoomController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiFindAllChatRooms() // 👈 Clean custom decorator!
-  async findAll(@Req() req: Request) {
-    const userId = req['user'].sub;
+  async findAll(@Req() req: AuthenticatedRequest) {
+    const userId = req.user.sub;
     const chatRooms = await this.chatRoomService.findAll(userId);
     return {
       data: chatRooms,
@@ -41,8 +42,8 @@ export class ChatRoomController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiFindOneChatRoom()
-  async findOne(@Param('id') id: string, @Req() req: Request) {
-    const userId = req['user'].sub;
+  async findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const userId = req.user.sub;
     const chatRoom = await this.chatRoomService.findOne(id, userId);
     return {
       data: chatRoom,
@@ -54,8 +55,8 @@ export class ChatRoomController {
   @HttpCode(HttpStatus.OK)
   @ApiUpdateChatRoom()
 
-  async update(@Param('id') id: string, @Body() updateChatRoomDto: UpdateChatRoomDto, @Req() req: Request) {
-    const userId = req['user'].sub;
+  async update(@Param('id') id: string, @Body() updateChatRoomDto: UpdateChatRoomDto, @Req() req: AuthenticatedRequest) {
+    const userId = req.user.sub;
     const chatRoom = await this.chatRoomService.update(id, updateChatRoomDto, userId);
     return {
       data: chatRoom,
@@ -65,8 +66,8 @@ export class ChatRoomController {
 
   @Post(':id/join')
   @UseGuards(AuthGuard)
-  async joinRoom(@Param('id') id: string, @Req() req: Request) {
-    const userId = req['user'].sub;
+  async joinRoom(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const userId = req.user.sub;
     const chatRoom = await this.chatRoomService.joinRoom(id, userId);
     return {
       data: chatRoom,
@@ -76,8 +77,8 @@ export class ChatRoomController {
 
   @Post(':id/leave')
   @UseGuards(AuthGuard)
-  async leaveRoom(@Param('id') id: string, @Req() req: Request) {
-    const userId = req['user'].sub;
+  async leaveRoom(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const userId = req.user.sub;
     const chatRoom = await this.chatRoomService.leaveRoom(id, userId);
     return {
       data: chatRoom,
@@ -87,8 +88,8 @@ export class ChatRoomController {
 
   @Delete(':id')
   @UseGuards(AuthGuard)
-  async remove(@Param('id') id: string, @Req() req: Request) {
-    const userId = req['user'].sub;
+  async remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const userId = req.user.sub;
     const chatRoom = await this.chatRoomService.remove(id, userId);
     return {
       data: chatRoom,
