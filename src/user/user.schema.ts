@@ -7,23 +7,20 @@ export type UserDocument = HydratedDocument<User>;
   timestamps: true,
   toJSON: {
     transform: (doc, ret: Record<string, any>) => {
-      const { refreshtoken, password, __v, ...cleanUser } = ret;
+      const { refreshtoken, __v, ...cleanUser } = ret;
       return cleanUser;
     },
   },
 })
 export class User {
-  @Prop({ required: true, trim: true })
+  @Prop({ trim: true, default: '' })
   fname!: string;
 
-  @Prop({ required: true, trim: true })
+  @Prop({ trim: true, default: '' })
   lname!: string;
 
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
   email!: string;
-
-  @Prop({ required: true, select: false })
-  password!: string;
 
   @Prop({
     type: {
@@ -40,6 +37,8 @@ export class User {
   @Prop({required: true, default: false})
   refreshtoken!: string;
   
+  @Prop({ type: String, enum: ['email', 'google', 'facebook'], default: 'email' })
+  provider?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
