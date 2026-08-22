@@ -1,9 +1,17 @@
 import { JwtService } from '@nestjs/jwt';
-import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+  ConnectedSocket,
+  MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
 import { connect } from 'mongoose';
 import { Server, Socket } from 'socket.io';
-import { jwtConstants } from 'src/auth/constants';
-import { ChatService } from 'src/chat/chat.service';
+import { jwtConstants } from 'src/modules/auth/constants';
+import { ChatService } from 'src/modules/chat/chat.service';
 import { RedisService } from 'src/shared/redis/redis.service';
 
 @WebSocketGateway({
@@ -11,29 +19,42 @@ import { RedisService } from 'src/shared/redis/redis.service';
     origin: 'http://localhost:3000',
   },
 })
-export class ChatStreamGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatStreamGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
-  constructor(private readonly jwtService: JwtService, 
-    private readonly chatService: ChatService, 
-    private readonly redisService: RedisService) { }
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly chatService: ChatService,
+    private readonly redisService: RedisService,
+  ) {}
 
   async handleConnection(client: Socket) {
     try {
-      const token = client.handshake.auth?.token || client.handshake.headers.authorization?.split(' ')[1] || this.extractCookieToken(client.handshake.headers.cookie);
+      const token =
+        client.handshake.auth?.token ||
+        client.handshake.headers.authorization?.split(' ')[1] ||
+        this.extractCookieToken(client.handshake.headers.cookie);
 
-      if(!token) {
-        console.log(`[Ws Authorization] No token provided for client ${client.id} -- missing token`);
+      if (!token) {
+        console.log(
+          `[Ws Authorization] No token provided for client ${client.id} -- missing token`,
+        );
       }
       const payload = await this.jwtService.verifyAsync(token, {
         secret: jwtConstants.accessSecret!,
       });
       client.data.user = payload;
-      console.log(`[Ws Authorization] Client ${client.id} connected with user ${payload.email}`);
+      console.log(
+        `[Ws Authorization] Client ${client.id} connected with user ${payload.email}`,
+      );
     } catch (error) {
       client.disconnect();
-      console.log(`[Ws Authorization] Client ${client.id} disconnected due to invalid token`);
+      console.log(
+        `[Ws Authorization] Client ${client.id} disconnected due to invalid token`,
+      );
     }
   }
 
@@ -44,12 +65,12 @@ export class ChatStreamGateway implements OnGatewayConnection, OnGatewayDisconne
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { roomId: string }
+    @MessageBody() payload: { roomId: string },
   ) {
-    const {roomId} = payload;
+    const { roomId } = payload;
 
     const user = client.data.user;
-    if(!roomId) {
+    if (!roomId) {
       client.emit('error', { message: 'Room ID is required' });
     }
     await client.join(roomId);
@@ -63,15 +84,15 @@ export class ChatStreamGateway implements OnGatewayConnection, OnGatewayDisconne
     return {
       status: 'success',
       message: `Joined room ${roomId}`,
-    }
+    };
   }
 
   @SubscribeMessage('leaveRoom')
   async handleLeaveRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { roomId: string }
+    @MessageBody() payload: { roomId: string },
   ) {
-    const {roomId} = payload;
+    const { roomId } = payload;
 
     await client.leave(roomId);
     const user = client.data.user;
@@ -89,11 +110,14 @@ export class ChatStreamGateway implements OnGatewayConnection, OnGatewayDisconne
   }
 
   @SubscribeMessage('chatMessage')
-  async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() payload: { chatRoom: string, message: string }) {
+  async handleMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { chatRoom: string; message: string },
+  ) {
     const { chatRoom, message } = payload;
     const user = client.data.user;
 
-    if(!chatRoom || !message) {
+    if (!chatRoom || !message) {
       client.emit('error', { message: 'Room ID and message are required' });
       return;
     }
@@ -112,16 +136,17 @@ export class ChatStreamGateway implements OnGatewayConnection, OnGatewayDisconne
       chatRoom: chatRoom,
       message: message,
       timestamp: new Date().toISOString(),
-    }
+    };
     this.server.to(chatRoom).emit('newMessage', chatData);
-    console.log(`[Ws Authorization] User ${user.email} sent message to room ${chatRoom}: ${message}`);
+    console.log(
+      `[Ws Authorization] User ${user.email} sent message to room ${chatRoom}: ${message}`,
+    );
 
     return {
       status: 'success',
-      chatData
+      chatData,
     };
   }
-
 
   private extractCookieToken(cookieHeader?: string): string | undefined {
     if (!cookieHeader) return undefined;

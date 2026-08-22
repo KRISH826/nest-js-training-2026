@@ -1,6 +1,10 @@
-import 'multer'; 
+import 'multer';
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { v2 as cloudinary, UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
+import {
+  v2 as cloudinary,
+  UploadApiResponse,
+  UploadApiErrorResponse,
+} from 'cloudinary';
 import { Readable } from 'stream';
 
 @Injectable()
@@ -22,7 +26,10 @@ export class CloudinaryService {
             { width: 500, height: 500, crop: 'fill', gravity: 'face' },
           ],
         },
-        (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
+        (
+          error: UploadApiErrorResponse | undefined,
+          result: UploadApiResponse | undefined,
+        ) => {
           if (error) return reject(error);
           if (!result) return reject(new Error('Cloudinary upload failed'));
           resolve(result);
@@ -35,13 +42,12 @@ export class CloudinaryService {
 
   async deleteImage(publicId: string): Promise<UploadApiResponse> {
     return new Promise((resolve, reject) => {
-        cloudinary.uploader.destroy(publicId, (error, result) => {
-            if (error) return reject(error);
-            resolve(result);
-        })
+      cloudinary.uploader.destroy(publicId, (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      });
     });
   }
-
 
   extractPublicIdFromUrl(url: string): string | null {
     if (!url) return null;

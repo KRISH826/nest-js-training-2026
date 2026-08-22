@@ -7,7 +7,7 @@ export type UserDocument = HydratedDocument<User>;
   timestamps: true,
   toJSON: {
     transform: (doc, ret: Record<string, any>) => {
-      const { refreshtoken, __v, ...cleanUser } = ret;
+      const { refreshToken, refreshtoken, __v, ...cleanUser } = ret;
       return cleanUser;
     },
   },
@@ -22,6 +22,9 @@ export class User {
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
   email!: string;
 
+  @Prop({ trim: true, default: '', maxlength: 255 })
+  bio?: string;
+
   @Prop({
     type: {
       public_id: { type: String, default: '' },
@@ -34,10 +37,14 @@ export class User {
     url: string;
   };
 
-  @Prop({required: true, default: false})
-  refreshtoken!: string;
-  
-  @Prop({ type: String, enum: ['email', 'google', 'facebook'], default: 'email' })
+  @Prop({ type: String, default: null, select: false })
+  refreshToken?: string | null;
+
+  @Prop({
+    type: String,
+    enum: ['email', 'google', 'facebook'],
+    default: 'email',
+  })
   provider?: string;
 }
 
