@@ -59,9 +59,6 @@ export class AuthController {
         }
     }
 
-
-    
-
     @UseGuards(AuthGuard)
     @Post('logout')
     async logout(@Req() req: AuthenticatedRequest, @Res({ passthrough: true }) res: express.Response,) {
