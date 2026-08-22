@@ -19,7 +19,7 @@ export class AuthService {
     private readonly userService: UserService,
     private jwtService: JwtService,
     private redisService: RedisService,
-  ) {}
+  ) { }
 
   private getOtpKey(email: string) {
     return `otp:${email.toLowerCase()}`;
@@ -40,6 +40,7 @@ export class AuthService {
     }
 
     const otp = crypto.randomInt(100000, 999999);
+    console.log(otp);
     const hashedOtp = await bcrypt.hash(otp.toString(), 10);
     const otpkey = this.getOtpKey(email);
     await this.redisService.set(otpkey, hashedOtp, 60);
