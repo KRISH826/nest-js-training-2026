@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   Get,
   MaxFileSizeValidator,
+  NotFoundException,
   ParseFilePipe,
   Patch,
   Post,
@@ -96,7 +97,7 @@ export class AuthController {
   async getProfile(@Req() req: AuthenticatedRequest) {
     const userId = req.user.sub;
     const user = await this.userService.findUserById(userId);
-    if (!user) throw new Error('User Not Found');
+    if (!user) throw new NotFoundException('User Not Found');
     return {
       message: 'User profile fetched successfully',
       data: user,

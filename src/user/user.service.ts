@@ -1,7 +1,7 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -10,14 +10,16 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<User>) { }
 
   async findOrCreateUserByEmail(email: string, provider: string = 'email') {
     try {
-      const user = await this.userModel.findOne({ email });
-      if (!user) throw new NotFoundException('User not found');
-      const newUser = await this.userModel.create({ email, provider });
-      return newUser;
+      const normalizedEmail = email.toLowerCase().trim();
+      let user = await this.userModel.findOne({ email: normalizedEmail });
+      if (!user) {
+        user = await this.userModel.create({ email: normalizedEmail, provider });
+      }
+      return user;
     } catch (error) {
       throw error;
     }
@@ -30,15 +32,17 @@ export class UserService {
     provider: string;
   }) {
     try {
-      let user = await this.userModel.findOne({ email: oauthData.email });
+      const normalizedEmail = oauthData.email.toLowerCase().trim();
+      let user = await this.userModel.findOne({ email: normalizedEmail });
       if (!user) {
         user = await this.userModel.create({
-          email: oauthData.email,
+          email: normalizedEmail,
           fname: oauthData.fname,
           lname: oauthData.lname,
           provider: oauthData.provider,
         });
       }
+      return user;
     } catch (error) {
       throw error;
     }
@@ -46,8 +50,10 @@ export class UserService {
 
   async getUserByEmail(email: string) {
     try {
-      if (!email) throw new Error('Email is required');
-      const user = await this.userModel.findOne({ email });
+      if (!email) throw new BadRequestException('Email is required');
+      const normalizedEmail = email.toLowerCase().trim();
+      const user = await this.userModel.findOne({ email: normalizedEmail });
+      if (!user) throw new NotFoundException('User not found');
       return user;
     } catch (error) {
       throw error;
@@ -60,8 +66,9 @@ export class UserService {
 
   async findUserById(userId: string) {
     try {
-      if (!userId) throw new Error('User Id is required');
+      if (!userId) throw new BadRequestException('User Id is required');
       const user = await this.userModel.findById(userId);
+      if (!user) throw new NotFoundException('User not found');
       return user;
     } catch (error) {
       throw error;
@@ -70,10 +77,11 @@ export class UserService {
 
   async updateUser(userId: string, updateData: Partial<User>) {
     try {
-      if (!userId) throw new Error('User Id is required');
+      if (!userId) throw new BadRequestException('User Id is required');
       const user = await this.userModel.findByIdAndUpdate(userId, updateData, {
         returnDocument: 'after',
       });
+      if (!user) throw new NotFoundException('User not found');
       return user;
     } catch (error) {
       throw error;
@@ -105,8 +113,8 @@ export class UserService {
   async logOutUser(userId: string) {
     try {
       const user = await this.userModel.findById(userId);
+      if (!user) throw new NotFoundException('User not found');
       await this.updateRefreshToken(userId, undefined);
-      if (!user) throw new Error('User not found');
       return user;
     } catch (error) {
       throw error;

@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   Length,
+  MaxLength,
 } from 'class-validator';
 
 export class SendOtpDto {
@@ -36,6 +37,12 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   lname?: string;
+
+  @ApiPropertyOptional({ example: 'Passionate developer and learner.', maxLength: 255 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  bio?: string;
 }
 export class UserDto {
   @ApiProperty({ example: 'john.doe@example.com' })
@@ -50,6 +57,12 @@ export class UserDto {
   @ApiProperty({ example: 'Doe' })
   @IsString()
   lname?: string;
+
+  @ApiPropertyOptional({ example: 'Passionate developer and learner.', maxLength: 255 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  bio?: string;
 
   @ApiProperty({ example: 'email' })
   @IsString()

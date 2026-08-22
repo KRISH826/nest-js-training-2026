@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcrypt';
@@ -10,7 +11,6 @@ import * as crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
 import { RedisService } from 'src/shared/redis/redis.service';
-import { UserDto } from './auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -70,6 +70,9 @@ export class AuthService {
       email,
       'email',
     )) as any;
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
     const tokens = await this.generateTokens(user._id.toString(), user.email);
     await this.userService.updateRefreshToken(
       user._id.toString(),
@@ -94,6 +97,9 @@ export class AuthService {
       const user = (await this.userService.findOrCreateOauthUser(
         oauthUser,
       )) as any;
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
       const tokens = await this.generateTokens(user._id.toString(), user.email);
       await this.userService.updateRefreshToken(
         user._id.toString(),
@@ -131,10 +137,10 @@ export class AuthService {
 
   async refreshTokens(userId: string, refreshToken: string) {
     const user = await this.userService.getUserByidWithRefreshToken(userId);
-    if (!user || !user.refreshtoken) {
+    if (!user || !user.refreshToken) {
       throw new ForbiddenException('Access Denied');
     }
-    const matches = await bcrypt.compare(refreshToken, user.refreshtoken);
+    const matches = await bcrypt.compare(refreshToken, user.refreshToken);
     if (!matches) {
       throw new ForbiddenException('Access Denied');
     }
