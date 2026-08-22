@@ -10,6 +10,7 @@ import {
   ParseFilePipe,
   Patch,
   Post,
+  Put,
   Req,
   Res,
   UploadedFile,
@@ -20,11 +21,22 @@ import { AuthService } from './auth.service';
 import { SendOtpDto, UpdateProfileDto, VerifyOtpDto } from './auth.dto';
 import { AuthGuard } from './auth.guard';
 import { UserService } from 'src/user/user.service';
-import express from 'express';
+import express, { CookieOptions } from 'express';
 import 'multer';
 import { CloudinaryService } from 'src/shared/cloudinary/cloudinary.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { AuthenticatedRequest } from './auth.types';
+import { tryCatch } from 'bullmq';
+import { JwtService } from '@nestjs/jwt';
+import { jwtConstants } from './constants';
+
+
+const COOKIE_BASE_OPTIONS: CookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  path: '/',
+};
 
 @Controller('auth')
 export class AuthController {
@@ -32,14 +44,31 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly userService: UserService,
     private readonly cloudinaryService: CloudinaryService,
-  ) {}
+    private readonly jwtService: JwtService
+  ) { }
 
-  private setAccessTokenCookie(res: express.Response, accessToken: string) {
+  private setAuthCookie(res: express.Response, accessToken: string, refreshToken: string) {
     res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 5 * 60 * 1000, // 5 minutes
+      ...COOKIE_BASE_OPTIONS,
+      maxAge: 10 * 60 * 1000
+    });
+
+    res.cookie('refresh_token', refreshToken, {
+      ...COOKIE_BASE_OPTIONS,
+      path: '/api/auth',
+      maxAge: 100 * 24 * 60 * 60 * 1000,
+    });
+  }
+
+  private clearCookie(res: express.Response) {
+    res.clearCookie('access_token', {
+      ...COOKIE_BASE_OPTIONS,
+      maxAge: 0
+    });
+    res.clearCookie('refresh_token', {
+      ...COOKIE_BASE_OPTIONS,
+      path: '/api/auth',
+      maxAge: 0
     });
   }
 
@@ -66,7 +95,7 @@ export class AuthController {
 
     try {
       const result = await this.authService.verifyOtp(email, otp);
-      this.setAccessTokenCookie(res, result.access_token);
+      this.setAuthCookie(res, result.access_token, result.refresh_token);
       return {
         message: 'OTP verified successfully',
         redirectToProfileUpdate: !result.isProfileComplete,
@@ -77,6 +106,30 @@ export class AuthController {
     }
   }
 
+  @Post("refresh")
+  async refreshTokens(
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: express.Response,
+  ) {
+    const rawRefreshToken = req.cookies?.['refresh_token'];
+    if (!rawRefreshToken) throw new ForbiddenException('Refresh token not found');
+    let payload: { sub: string; email: string };
+    try {
+      payload = await this.jwtService.verifyAsync(rawRefreshToken, {
+        secret: jwtConstants.refreshSecret
+      })
+    } catch (error) {
+      this.clearCookie(res);
+      throw new ForbiddenException('Refresh token invalid or expired');
+    }
+    const tokens = await this.authService.refreshTokens(payload.sub, rawRefreshToken);
+    this.setAuthCookie(res, tokens.access_token, tokens.refresh_token);
+    return {
+      message: 'Token refreshed successfully',
+      data: tokens,
+    };
+  }
+
   @UseGuards(AuthGuard)
   @Post('logout')
   async logout(
@@ -85,7 +138,7 @@ export class AuthController {
   ) {
     const userId = req.user.sub;
     const result = await this.authService.userLogOut(userId);
-    res.clearCookie('access_token');
+    this.clearCookie(res)
     return {
       message: 'User logged out successfully',
       data: result,
@@ -106,7 +159,7 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('avatar'))
-  @Patch('profile')
+  @Put('profile')
   async updateProfile(
     @Req() req: AuthenticatedRequest,
     @Body() updateProfileDto: UpdateProfileDto,
