@@ -11,7 +11,7 @@ export class ChatService {
   constructor(
     @InjectModel(Chat.name) private chatModel: Model<Chat>,
     @InjectModel(ChatRoom.name) private chatRoomModel: Model<ChatRoom>,
-  ) {}
+  ) { }
   async create(createChatDto: CreateChatDto, senderId: string) {
     try {
       const chatRoom = await this.chatRoomModel.findById(
@@ -91,7 +91,9 @@ export class ChatService {
       if (chat.sender.toString() !== userId) {
         throw new Error('You are not authorized to update this chat');
       }
-      const updatedChat = this.chatModel.findByIdAndUpdate(id, updateChatDto, {
+      const updatedChat = this.chatModel.findByIdAndUpdate(id, {
+        $set: updateChatDto,
+      }, {
         returnDocument: 'after',
       });
       return updatedChat;
