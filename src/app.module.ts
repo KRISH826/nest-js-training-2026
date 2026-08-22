@@ -1,21 +1,21 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './user/user.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { CourseModule } from './course/course.module';
+import { CourseModule } from './modules/course/course.module';
 import { ChatStreamGateway } from './chat-stream/chat-stream.gateway';
-import { ChatRoomModule } from './chat-room/chat-room.module';
+import { ChatRoomModule } from './modules/chat-room/chat-room.module';
 import { RedisModule } from './shared/redis/redis.module';
-import { ChatModule } from './chat/chat.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { ChatStreamModule } from './chat-stream/chat-stream.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
     }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
@@ -24,12 +24,12 @@ import { ChatStreamModule } from './chat-stream/chat-stream.module';
       }),
     }),
     RedisModule,
-    AuthModule, 
-    UserModule, 
+    AuthModule,
+    UserModule,
     CourseModule,
     ChatRoomModule,
     ChatModule,
-    ChatStreamModule
+    ChatStreamModule,
   ],
   controllers: [AppController],
   providers: [AppService, ChatStreamGateway],

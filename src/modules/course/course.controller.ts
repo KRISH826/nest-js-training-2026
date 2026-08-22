@@ -14,7 +14,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard } from 'src/modules/auth/auth.guard';
 import { SWAGGER_TAGS } from 'src/common/swagger/swagger.constants';
 import {
   ApiCreateCourse,
@@ -54,7 +54,10 @@ export class CourseController {
   @Patch(':id')
   @UseGuards(AuthGuard)
   @ApiUpdateCourse()
-  async update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateCourseDto: UpdateCourseDto,
+  ) {
     return this.courseService.update(id, updateCourseDto);
   }
 

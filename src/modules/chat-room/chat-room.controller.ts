@@ -1,12 +1,32 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ChatRoomService } from './chat-room.service';
 import { CreateChatRoomDto } from './dto/create-chat-room.dto';
 import { UpdateChatRoomDto } from './dto/update-chat-room.dto';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard } from 'src/modules/auth/auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { SWAGGER_AUTH_NAME, SWAGGER_TAGS } from 'src/common/swagger/swagger.constants';
-import { ApiCreateChatRoom, ApiFindAllChatRooms, ApiFindOneChatRoom, ApiUpdateChatRoom } from './chat-room.swagger';
-import type { AuthenticatedRequest } from 'src/auth/auth.types';
+import {
+  SWAGGER_AUTH_NAME,
+  SWAGGER_TAGS,
+} from 'src/common/swagger/swagger.constants';
+import {
+  ApiCreateChatRoom,
+  ApiFindAllChatRooms,
+  ApiFindOneChatRoom,
+  ApiUpdateChatRoom,
+} from './chat-room.swagger';
+import type { AuthenticatedRequest } from 'src/modules/auth/auth.types';
 
 @ApiTags(SWAGGER_TAGS.CHAT_ROOM)
 @ApiBearerAuth(SWAGGER_AUTH_NAME)
@@ -18,9 +38,15 @@ export class ChatRoomController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiCreateChatRoom() // 👈 Clean custom decorator!
-  async create(@Body() createChatRoomDto: CreateChatRoomDto, @Req() req: AuthenticatedRequest) {
+  async create(
+    @Body() createChatRoomDto: CreateChatRoomDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
     const userId = req.user.sub;
-    const chatRoom = await this.chatRoomService.create(createChatRoomDto, userId);
+    const chatRoom = await this.chatRoomService.create(
+      createChatRoomDto,
+      userId,
+    );
     return {
       data: chatRoom,
       message: 'ChatRoom created successfully',
@@ -54,10 +80,17 @@ export class ChatRoomController {
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   @ApiUpdateChatRoom()
-
-  async update(@Param('id') id: string, @Body() updateChatRoomDto: UpdateChatRoomDto, @Req() req: AuthenticatedRequest) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateChatRoomDto: UpdateChatRoomDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
     const userId = req.user.sub;
-    const chatRoom = await this.chatRoomService.update(id, updateChatRoomDto, userId);
+    const chatRoom = await this.chatRoomService.update(
+      id,
+      updateChatRoomDto,
+      userId,
+    );
     return {
       data: chatRoom,
       message: 'ChatRoom updated successfully',
@@ -71,8 +104,8 @@ export class ChatRoomController {
     const chatRoom = await this.chatRoomService.joinRoom(id, userId);
     return {
       data: chatRoom,
-      message: "Joined Chat Room Successfully"
-    }
+      message: 'Joined Chat Room Successfully',
+    };
   }
 
   @Post(':id/leave')
@@ -82,8 +115,8 @@ export class ChatRoomController {
     const chatRoom = await this.chatRoomService.leaveRoom(id, userId);
     return {
       data: chatRoom,
-      message: "Left Chat Room Successfully"
-    }
+      message: 'Left Chat Room Successfully',
+    };
   }
 
   @Delete(':id')

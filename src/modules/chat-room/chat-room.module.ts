@@ -8,9 +8,9 @@ import { ChatRoom, ChatRoomSchema } from './entities/chat-room.entity';
   controllers: [ChatRoomController],
   providers: [ChatRoomService],
   imports: [
-      MongooseModule.forFeature([
-        { name: ChatRoom.name, schema: ChatRoomSchema },
-      ]),
-    ],
+    MongooseModule.forFeature([
+      { name: ChatRoom.name, schema: ChatRoomSchema },
+    ]),
+  ],
 })
 export class ChatRoomModule {}

@@ -1,6 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { SWAGGER_AUTH_NAME, SWAGGER_TAGS } from 'src/common/swagger/swagger.constants';;
+import {
+  SWAGGER_AUTH_NAME,
+  SWAGGER_TAGS,
+} from 'src/common/swagger/swagger.constants';
 
 /**
  * Production-grade Swagger configuration setup
@@ -8,7 +11,9 @@ import { SWAGGER_AUTH_NAME, SWAGGER_TAGS } from 'src/common/swagger/swagger.cons
 export function setupSwagger(app: INestApplication): void {
   const config = new DocumentBuilder()
     .setTitle('Real-Time Chat & User API')
-    .setDescription('Production-grade REST & WebSocket Chat Backend API Documentation')
+    .setDescription(
+      'Production-grade REST & WebSocket Chat Backend API Documentation',
+    )
     .setVersion('1.0.0')
     // Define module tags matching your project structure
     .addTag(SWAGGER_TAGS.AUTH, 'Authentication & Token Management')

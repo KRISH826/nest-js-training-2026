@@ -12,11 +12,13 @@ import { FacebookStrategy } from './strategies/facebook.strategy';
 @Module({
   controllers: [AuthController],
   providers: [AuthService, GoogleStrategy, FacebookStrategy],
-  imports: [UserModule, 
-    CloudinaryModule, PassportModule.register({ defaultStrategy: 'jwt' }),
+  imports: [
+    UserModule,
+    CloudinaryModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       global: true,
-    })
+    }),
   ],
 })
 export class AuthModule {}

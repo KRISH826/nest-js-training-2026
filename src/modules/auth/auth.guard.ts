@@ -1,4 +1,3 @@
-
 import {
   CanActivate,
   ExecutionContext,
@@ -16,7 +15,10 @@ import type { AuthenticatedRequest, JwtUser } from './auth.types';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService, private reflector: Reflector) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private reflector: Reflector,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
@@ -30,15 +32,15 @@ export class AuthGuard implements CanActivate {
         secret: jwtConstants.accessSecret,
       });
       request.user = payload;
-    } catch(err) {
+    } catch (err) {
       console.log('JWT verify error:', err);
       throw new UnauthorizedException();
     }
 
-     const requiredRoles = this.reflector.getAllAndOverride<RoleType[]>(ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredRoles = this.reflector.getAllAndOverride<RoleType[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (requiredRoles && requiredRoles.length > 0) {
       if (!payload.role || !requiredRoles.includes(payload.role)) {
@@ -49,7 +51,7 @@ export class AuthGuard implements CanActivate {
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
-    if(request.cookies && request.cookies['access_token']) {
+    if (request.cookies && request.cookies['access_token']) {
       return request.cookies['access_token'];
     }
     const [type, token] = request.headers.authorization?.split(' ') ?? [];

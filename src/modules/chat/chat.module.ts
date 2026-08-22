@@ -3,7 +3,10 @@ import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Chat, ChatSchema } from './entities/chat.entity';
-import { ChatRoom, ChatRoomSchema } from 'src/chat-room/entities/chat-room.entity';
+import {
+  ChatRoom,
+  ChatRoomSchema,
+} from 'src/modules/chat-room/entities/chat-room.entity';
 
 @Module({
   controllers: [ChatController],
@@ -16,4 +19,4 @@ import { ChatRoom, ChatRoomSchema } from 'src/chat-room/entities/chat-room.entit
   ],
   exports: [ChatService],
 })
-export class ChatModule { }
+export class ChatModule {}

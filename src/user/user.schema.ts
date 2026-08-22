@@ -34,10 +34,14 @@ export class User {
     url: string;
   };
 
-  @Prop({required: true, default: false})
+  @Prop({ required: true, default: false })
   refreshtoken!: string;
-  
-  @Prop({ type: String, enum: ['email', 'google', 'facebook'], default: 'email' })
+
+  @Prop({
+    type: String,
+    enum: ['email', 'google', 'facebook'],
+    default: 'email',
+  })
   provider?: string;
 }
 
