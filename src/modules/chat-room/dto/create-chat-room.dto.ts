@@ -27,6 +27,7 @@ export class CreateChatRoomDto {
   description?: string;
 
   @ApiProperty({ example: 50, minimum: 2, type: Number })
+  @Type(() => Number)
   @IsNumber()
   maxMembers!: number;
 

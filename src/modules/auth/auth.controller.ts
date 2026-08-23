@@ -55,7 +55,7 @@ export class AuthController {
 
     res.cookie('refresh_token', refreshToken, {
       ...COOKIE_BASE_OPTIONS,
-      path: '/api/auth',
+      path: '/',
       maxAge: 100 * 24 * 60 * 60 * 1000,
     });
   }
@@ -67,7 +67,7 @@ export class AuthController {
     });
     res.clearCookie('refresh_token', {
       ...COOKIE_BASE_OPTIONS,
-      path: '/api/auth',
+      path: '/',
       maxAge: 0
     });
   }
