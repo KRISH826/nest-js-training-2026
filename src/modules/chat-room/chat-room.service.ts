@@ -17,7 +17,11 @@ export class ChatRoomService {
     @InjectModel(ChatRoom.name) private chatroomModel: Model<ChatRoom>,
     private readonly redisService: RedisService,
   ) {}
-  async create(createChatRoomDto: CreateChatRoomDto, userId: string) {
+  async create(
+    createChatRoomDto: CreateChatRoomDto,
+    userId: string,
+    avatar?: { public_id: string; url: string },
+  ) {
     try {
       const existChatRoom = await this.chatroomModel.findOne({
         name: createChatRoomDto.name,
@@ -34,6 +38,7 @@ export class ChatRoomService {
       }
       const chatRoom = await this.chatroomModel.create({
         ...createChatRoomDto,
+        ...(avatar && { avatar }),
         createdBy: new Types.ObjectId(userId),
       });
       await this.redisService.del(`chatrooms:${userId}`);

@@ -20,6 +20,18 @@ export class ChatRoom {
   @Prop({ required: true, max: 50 })
   maxMembers!: number;
 
+  @Prop({
+    type: {
+      public_id: { type: String, default: '' },
+      url: { type: String, default: '' },
+    },
+    default: null,
+  })
+  avatar?: {
+    public_id: string;
+    url: string;
+  }
+
   @Prop({ default: true })
   active!: boolean;
 
