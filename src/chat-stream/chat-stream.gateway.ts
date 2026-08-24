@@ -80,6 +80,16 @@ export class ChatStreamGateway
       client.emit('error', { message: 'Room ID is required' });
     }
     const room = await this.chatRoomModel.findById(roomId);
+    if (!room) {
+      client.emit('error', { message: 'Chat room not found' });
+      return;
+    }
+
+    const isMember = room.createdBy.toString() === user.sub || room.members.some((m: any) => m.toString() === user.sub);
+    if (!isMember) {
+      client.emit('error', { message: 'You are not a member of this room' });
+      return;
+    }
     await client.join(roomId);
     console.log(`[Ws Authorization] User ${user.email} joined room ${roomId}`);
     this.server.to(roomId).emit('roomNotice', {
@@ -119,9 +129,9 @@ export class ChatStreamGateway
   @SubscribeMessage('chatMessage')
   async handleMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { chatRoom: string; message: string },
+    @MessageBody() payload: { chatRoom: string; message: string; tempId?: string },
   ) {
-    const { chatRoom, message } = payload;
+    const { chatRoom, message, tempId } = payload;
     const user = client.data.user;
 
     if (!chatRoom || !message) {
@@ -134,11 +144,13 @@ export class ChatStreamGateway
         chatRoom: chatRoom,
         message,
       },
-      user.sub, // Sender's userId from JWT token
+      user.sub,
     );
 
     const chatData = {
+      tempId,
       senderId: savedChat._id,
+      sender: savedChat.sender,
       senderEmail: user.email,
       chatRoom: chatRoom,
       message: message,
