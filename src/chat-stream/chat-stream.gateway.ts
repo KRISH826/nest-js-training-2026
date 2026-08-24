@@ -153,7 +153,7 @@ export class ChatStreamGateway
       sender: savedChat.sender,
       chatRoom: chatRoom,
       message: message,
-      timestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     };
     this.server.to(chatRoom).emit('newMessage', chatData);
     console.log(
