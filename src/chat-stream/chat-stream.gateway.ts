@@ -1,4 +1,6 @@
+import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { InjectModel } from '@nestjs/mongoose';
 import {
   ConnectedSocket,
   MessageBody,
@@ -8,28 +10,32 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { connect } from 'mongoose';
+import { Model, connect } from 'mongoose';
 import { Server, Socket } from 'socket.io';
 import { jwtConstants } from 'src/modules/auth/constants';
+import { ChatRoom } from 'src/modules/chat-room/entities/chat-room.entity';
 import { ChatService } from 'src/modules/chat/chat.service';
 import { RedisService } from 'src/shared/redis/redis.service';
 
 @WebSocketGateway({
   cors: {
     origin: 'http://localhost:3000',
+    credentials: true, // Crucial for receiving HttpOnly cookies over WS
   },
 })
 export class ChatStreamGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+  implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
+
+  private readonly logger = new Logger(ChatStreamGateway.name);
 
   constructor(
     private readonly jwtService: JwtService,
     private readonly chatService: ChatService,
     private readonly redisService: RedisService,
-  ) {}
+    @InjectModel(ChatRoom.name) private readonly chatRoomModel: Model<ChatRoom>,
+  ) { }
 
   async handleConnection(client: Socket) {
     try {
@@ -73,6 +79,7 @@ export class ChatStreamGateway
     if (!roomId) {
       client.emit('error', { message: 'Room ID is required' });
     }
+    const room = await this.chatRoomModel.findById(roomId);
     await client.join(roomId);
     console.log(`[Ws Authorization] User ${user.email} joined room ${roomId}`);
     this.server.to(roomId).emit('roomNotice', {
@@ -99,8 +106,8 @@ export class ChatStreamGateway
     console.log(`[Ws Authorization] User ${user.email} left room ${roomId}`);
 
     this.server.to(roomId).emit('roomNotice', {
-      user: user.email,
-      message: `${user.email} left the room`,
+      user: user.lname + " " + user.fname,
+      message: `${user.lname + " " + user.fname} left the room`,
       timestamp: new Date().toISOString(),
     });
     return {
