@@ -151,7 +151,6 @@ export class ChatStreamGateway
       tempId,
       senderId: savedChat._id,
       sender: savedChat.sender,
-      senderEmail: user.email,
       chatRoom: chatRoom,
       message: message,
       timestamp: new Date().toISOString(),
