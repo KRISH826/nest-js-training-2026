@@ -16,7 +16,7 @@ export class ChatRoomService {
   constructor(
     @InjectModel(ChatRoom.name) private chatroomModel: Model<ChatRoom>,
     private readonly redisService: RedisService,
-  ) {}
+  ) { }
   async create(
     createChatRoomDto: CreateChatRoomDto,
     userId: string,
@@ -56,6 +56,7 @@ export class ChatRoomService {
         async () => {
           const chatRooms = await this.chatroomModel
             .find({ createdBy: userId })
+            .sort({ createdAt: -1 })
             .lean();
           return chatRooms;
         },
