@@ -38,6 +38,7 @@ export class ChatRoomService {
       }
       const chatRoom = await this.chatroomModel.create({
         ...createChatRoomDto,
+        members: [new Types.ObjectId(userId)],
         ...(avatar && { avatar }),
         createdBy: new Types.ObjectId(userId),
       });
