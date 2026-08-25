@@ -1,4 +1,6 @@
+import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { InjectModel } from '@nestjs/mongoose';
 import {
   ConnectedSocket,
   MessageBody,
@@ -8,28 +10,37 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { connect } from 'mongoose';
+import { Model, connect } from 'mongoose';
 import { Server, Socket } from 'socket.io';
 import { jwtConstants } from 'src/modules/auth/constants';
+import { ChatRoom } from 'src/modules/chat-room/entities/chat-room.entity';
 import { ChatService } from 'src/modules/chat/chat.service';
 import { RedisService } from 'src/shared/redis/redis.service';
 
 @WebSocketGateway({
   cors: {
     origin: 'http://localhost:3000',
+    credentials: true, // Crucial for receiving HttpOnly cookies over WS
   },
 })
 export class ChatStreamGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+  implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
+
+  private readonly logger = new Logger(ChatStreamGateway.name);
 
   constructor(
     private readonly jwtService: JwtService,
     private readonly chatService: ChatService,
     private readonly redisService: RedisService,
-  ) {}
+    @InjectModel(ChatRoom.name) private readonly chatRoomModel: Model<ChatRoom>,
+  ) { }
+
+  private getUserDisplayName(user: any): string {
+    const fullName = [user?.fname, user?.lname].filter(Boolean).join(' ').trim();
+    return fullName || user?.email || 'A user';
+  }
 
   async handleConnection(client: Socket) {
     try {
@@ -73,11 +84,23 @@ export class ChatStreamGateway
     if (!roomId) {
       client.emit('error', { message: 'Room ID is required' });
     }
+    const room = await this.chatRoomModel.findById(roomId);
+    if (!room) {
+      client.emit('error', { message: 'Chat room not found' });
+      return;
+    }
+
+    const isMember = room.createdBy.toString() === user.sub || room.members.some((m: any) => m.toString() === user.sub);
+    if (!isMember) {
+      client.emit('error', { message: 'You are not a member of this room' });
+      return;
+    }
     await client.join(roomId);
-    console.log(`[Ws Authorization] User ${user.email} joined room ${roomId}`);
+    const displayName = this.getUserDisplayName(user);
+    console.log(`[Ws Authorization] User ${displayName} joined room ${roomId}`);
     this.server.to(roomId).emit('roomNotice', {
-      user: user.email,
-      message: `${user.email} joined the room`,
+      user: displayName,
+      message: `${displayName} joined the room`,
       timestamp: new Date().toISOString(),
     });
 
@@ -96,11 +119,12 @@ export class ChatStreamGateway
 
     await client.leave(roomId);
     const user = client.data.user;
-    console.log(`[Ws Authorization] User ${user.email} left room ${roomId}`);
+    const displayName = this.getUserDisplayName(user);
+    console.log(`[Ws Authorization] User ${displayName} left room ${roomId}`);
 
     this.server.to(roomId).emit('roomNotice', {
-      user: user.email,
-      message: `${user.email} left the room`,
+      user: displayName,
+      message: `${displayName} left the room`,
       timestamp: new Date().toISOString(),
     });
     return {
@@ -112,9 +136,9 @@ export class ChatStreamGateway
   @SubscribeMessage('chatMessage')
   async handleMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { chatRoom: string; message: string },
+    @MessageBody() payload: { chatRoom: string; message: string; tempId?: string },
   ) {
-    const { chatRoom, message } = payload;
+    const { chatRoom, message, tempId } = payload;
     const user = client.data.user;
 
     if (!chatRoom || !message) {
@@ -127,19 +151,21 @@ export class ChatStreamGateway
         chatRoom: chatRoom,
         message,
       },
-      user.sub, // Sender's userId from JWT token
+      user.sub,
     );
 
     const chatData = {
+      tempId,
       senderId: savedChat._id,
-      senderEmail: user.email,
+      sender: savedChat.sender,
       chatRoom: chatRoom,
       message: message,
-      timestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     };
+    const displayName = this.getUserDisplayName(user);
     this.server.to(chatRoom).emit('newMessage', chatData);
     console.log(
-      `[Ws Authorization] User ${user.email} sent message to room ${chatRoom}: ${message}`,
+      `[Ws Authorization] User ${displayName} sent message to room ${chatRoom}: ${message}`,
     );
 
     return {

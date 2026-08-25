@@ -38,6 +38,7 @@ export class ChatRoomService {
       }
       const chatRoom = await this.chatroomModel.create({
         ...createChatRoomDto,
+        members: [new Types.ObjectId(userId)],
         ...(avatar && { avatar }),
         createdBy: new Types.ObjectId(userId),
       });
@@ -55,8 +56,12 @@ export class ChatRoomService {
         cacheKey,
         async () => {
           const chatRooms = await this.chatroomModel
-            .find({ createdBy: userId })
+            .find({
+              active: true,
+              $or: [{ createdBy: userId }, { members: userId }],
+            })
             .sort({ createdAt: -1 })
+            .populate('createdBy', 'fname lname email avatar')
             .lean();
           return chatRooms;
         },
@@ -88,6 +93,31 @@ export class ChatRoomService {
       }
 
       return chatRoom;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async findAllPublic(userId: string) {
+    try {
+      const cacheKey = `chatrooms:public:${userId}`;
+      const cachedChatRooms = await this.redisService.getOrSet<ChatRoom[]>(
+        cacheKey,
+        async () => {
+          const chatRooms = await this.chatroomModel
+            .find({
+              active: true,
+              $nor: [{ createdBy: userId }, { members: userId }],
+            })
+            .sort({ createdAt: -1 })
+            .populate({
+              path: 'createdBy',
+              select: 'fname lname email avatar',
+            });
+          return chatRooms;
+        },
+      );
+      return cachedChatRooms;
     } catch (error) {
       throw error;
     }
@@ -164,7 +194,9 @@ export class ChatRoomService {
       await room.save();
       await Promise.all([
         this.redisService.del(`chatroom:${roomId}`),
+        this.redisService.del(`chatrooms:${userId}`),
         this.redisService.del(`chatrooms:${room.createdBy.toString()}`), // owner ka list cache
+        this.redisService.delPattern('chatrooms:public:*'),
       ]);
       return room;
     } catch (error) {
@@ -189,6 +221,7 @@ export class ChatRoomService {
       await Promise.all([
         this.redisService.del(`chatroom:${roomId}`),
         this.redisService.del(`chatrooms:${room.createdBy.toString()}`), // owner ka list cache
+        this.redisService.delPattern('chatrooms:public:*'),
       ]);
       return room;
     } catch (error) {

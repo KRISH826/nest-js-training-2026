@@ -49,6 +49,25 @@ export function ApiFindAllChatRooms() {
   );
 }
 
+export function ApiFindAllPublicChatRooms() {
+  return applyDecorators(
+    ApiBearerAuth(SWAGGER_AUTH_NAME),
+    ApiOperation({
+      summary: 'Fetch all public chat rooms',
+      description:
+        'Retrieves all active public chat rooms (served from Redis cache if available).',
+    }),
+    ApiResponse({
+      status: HttpStatus.OK,
+      description: 'Public chat rooms retrieved successfully',
+    }),
+    ApiResponse({
+      status: HttpStatus.UNAUTHORIZED,
+      description: 'Unauthorized',
+    }),
+  );
+}
+
 export function ApiFindOneChatRoom() {
   return applyDecorators(
     ApiBearerAuth(SWAGGER_AUTH_NAME),

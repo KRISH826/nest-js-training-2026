@@ -32,7 +32,7 @@ export class ChatService {
         sender: senderId,
         message: createChatDto.message,
       });
-      return chat;
+      return chat.populate('sender', 'fname lname email avatar');
     } catch (error) {
       throw error;
     }
@@ -66,7 +66,7 @@ export class ChatService {
         .find(query)
         .sort({ createdAt: -1 })
         .limit(limit)
-        .populate('sender', 'fname lname')
+        .populate('sender', 'fname lname email avatar')
         .lean();
       return messages.reverse();
     } catch (error) {
@@ -95,7 +95,7 @@ export class ChatService {
         $set: updateChatDto,
       }, {
         returnDocument: 'after',
-      });
+      }).populate('sender', 'fname lname email avatar');
       return updatedChat;
     } catch (error) {
       throw error;

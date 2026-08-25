@@ -6,7 +6,6 @@ import { UserModule } from './user/user.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CourseModule } from './modules/course/course.module';
-import { ChatStreamGateway } from './chat-stream/chat-stream.gateway';
 import { ChatRoomModule } from './modules/chat-room/chat-room.module';
 import { RedisModule } from './shared/redis/redis.module';
 import { ChatModule } from './modules/chat/chat.module';
@@ -32,6 +31,6 @@ import { ChatStreamModule } from './chat-stream/chat-stream.module';
     ChatStreamModule,
   ],
   controllers: [AppController],
-  providers: [AppService, ChatStreamGateway],
+  providers: [AppService],
 })
 export class AppModule {}
