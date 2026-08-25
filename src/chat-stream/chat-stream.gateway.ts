@@ -37,6 +37,11 @@ export class ChatStreamGateway
     @InjectModel(ChatRoom.name) private readonly chatRoomModel: Model<ChatRoom>,
   ) { }
 
+  private getUserDisplayName(user: any): string {
+    const fullName = [user?.fname, user?.lname].filter(Boolean).join(' ').trim();
+    return fullName || user?.email || 'A user';
+  }
+
   async handleConnection(client: Socket) {
     try {
       const token =
@@ -91,10 +96,11 @@ export class ChatStreamGateway
       return;
     }
     await client.join(roomId);
-    console.log(`[Ws Authorization] User ${user.email} joined room ${roomId}`);
+    const displayName = this.getUserDisplayName(user);
+    console.log(`[Ws Authorization] User ${displayName} joined room ${roomId}`);
     this.server.to(roomId).emit('roomNotice', {
-      user: user.email,
-      message: `${user.email} joined the room`,
+      user: displayName,
+      message: `${displayName} joined the room`,
       timestamp: new Date().toISOString(),
     });
 
@@ -113,11 +119,12 @@ export class ChatStreamGateway
 
     await client.leave(roomId);
     const user = client.data.user;
-    console.log(`[Ws Authorization] User ${user.email} left room ${roomId}`);
+    const displayName = this.getUserDisplayName(user);
+    console.log(`[Ws Authorization] User ${displayName} left room ${roomId}`);
 
     this.server.to(roomId).emit('roomNotice', {
-      user: user.lname + " " + user.fname,
-      message: `${user.lname + " " + user.fname} left the room`,
+      user: displayName,
+      message: `${displayName} left the room`,
       timestamp: new Date().toISOString(),
     });
     return {
@@ -155,9 +162,10 @@ export class ChatStreamGateway
       message: message,
       createdAt: new Date().toISOString(),
     };
+    const displayName = this.getUserDisplayName(user);
     this.server.to(chatRoom).emit('newMessage', chatData);
     console.log(
-      `[Ws Authorization] User ${user.email} sent message to room ${chatRoom}: ${message}`,
+      `[Ws Authorization] User ${displayName} sent message to room ${chatRoom}: ${message}`,
     );
 
     return {

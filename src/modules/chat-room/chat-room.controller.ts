@@ -28,6 +28,7 @@ import {
 import {
   ApiCreateChatRoom,
   ApiFindAllChatRooms,
+  ApiFindAllPublicChatRooms,
   ApiFindOneChatRoom,
   ApiUpdateChatRoom,
 } from './chat-room.swagger';
@@ -95,6 +96,18 @@ export class ChatRoomController {
     return {
       data: chatRooms,
       message: 'ChatRooms found successfully',
+    };
+  }
+
+  @Get('public')
+  @HttpCode(HttpStatus.OK)
+  @ApiFindAllPublicChatRooms()
+  async findAllPublic(@Req() req: AuthenticatedRequest) {
+    const userId = req.user.sub;
+    const chatRooms = await this.chatRoomService.findAllPublic(userId);
+    return {
+      data: chatRooms,
+      message: 'Public ChatRooms found successfully',
     };
   }
 
