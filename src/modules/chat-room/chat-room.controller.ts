@@ -2,8 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
-  Patch,
   Param,
   Delete,
   UseGuards,
@@ -123,7 +123,7 @@ export class ChatRoomController {
     };
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseInterceptors(FileInterceptor('avatar'))
   @HttpCode(HttpStatus.OK)
   @ApiUpdateChatRoom()
