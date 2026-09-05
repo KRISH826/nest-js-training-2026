@@ -8,12 +8,14 @@ import { jwtConstants } from './constants';
 import { CloudinaryModule } from 'src/shared/cloudinary/cloudinary.module';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { FacebookStrategy } from './strategies/facebook.strategy';
+import { MailModule } from 'src/shared/mail/mail.module';
 
 @Module({
   controllers: [AuthController],
   providers: [AuthService, GoogleStrategy, FacebookStrategy],
   imports: [
     UserModule,
+    MailModule,
     CloudinaryModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
