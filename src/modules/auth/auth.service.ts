@@ -11,6 +11,8 @@ import * as crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
 import { RedisService } from 'src/shared/redis/redis.service';
+import { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +21,7 @@ export class AuthService {
     private readonly userService: UserService,
     private jwtService: JwtService,
     private redisService: RedisService,
+    @InjectQueue('mail-queue') private readonly mailQueue: Queue, // Inject BullMQ queue
   ) { }
 
   private getOtpKey(email: string) {
@@ -32,6 +35,7 @@ export class AuthService {
   async sendOtp(email: string) {
     const cooldownKey = this.getOtpCoolDown(email);
     const inCoolDownKey = await this.redisService.get(cooldownKey);
+    const sanitizedEmail = email.toLowerCase().trim();
 
     if (inCoolDownKey) {
       throw new BadRequestException(
@@ -45,6 +49,20 @@ export class AuthService {
     const otpkey = this.getOtpKey(email);
     await this.redisService.set(otpkey, hashedOtp, 60);
     await this.redisService.set(cooldownKey, '1', 60);
+
+    await this.mailQueue.add(
+      'send-otp',
+      { email: sanitizedEmail, otp },
+      {
+        attempts: 3, // Auto-retry up to 3 times if Brevo is down
+        backoff: {
+          type: 'exponential',
+          delay: 1000, // 1s, 2s, 4s delay
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+    );
 
     this.logger.log(`[DEV ONLY] Generated OTP for ${email}: ${otp}`);
 
