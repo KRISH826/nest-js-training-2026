@@ -220,6 +220,7 @@ export class ChatRoomService {
       await room.save();
       await Promise.all([
         this.redisService.del(`chatroom:${roomId}`),
+        this.redisService.del(`chatrooms:${userId}`),
         this.redisService.del(`chatrooms:${room.createdBy.toString()}`), // owner ka list cache
         this.redisService.delPattern('chatrooms:public:*'),
       ]);
