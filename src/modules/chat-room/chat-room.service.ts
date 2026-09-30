@@ -176,29 +176,45 @@ export class ChatRoomService {
   // join room
   async joinRoom(roomId: string, userId: string) {
     try {
-      const room = await this.chatroomModel.findById(roomId);
-      if (!room || !room.active)
-        throw new NotFoundException('ChatRoom not found');
-      if (room.createdBy.toString() === userId)
+      const userObjectId = new Types.ObjectId(userId);
+      const roomMeta = await this.chatroomModel.findById(roomId, 'createdBy members maxMembers active');
+      if (!roomMeta || !roomMeta.active) {
+        throw new NotFoundException('ChatRoom not found or inactive');
+      }
+      if (roomMeta.createdBy.toString() === userId) {
         throw new ForbiddenException('You cannot join your own chat room');
-      const alreadyMember = room.members.find(
-        (member) => member.toString() === userId,
-      );
-      if (alreadyMember)
-        throw new ForbiddenException(
-          'You are already a member of this chat room',
-        );
-      if (room.members.length >= room.maxMembers)
-        throw new ForbiddenException('ChatRoom is full');
-      room.members.push(new Types.ObjectId(userId));
-      await room.save();
+      }
+      const updateRoom = await this.chatroomModel.findOneAndUpdate({
+        _id: roomId,
+        active: true,
+        members: { $ne: userObjectId }, $expr: { $lt: [{ $size: '$members' }, '$maxMembers'] },
+      }, {
+        $addToSet: { members: userObjectId },
+      },
+        {
+          returnDocument: 'after'
+        }
+      )
+      if (!updateRoom) {
+        const existing = await this.chatroomModel.findById(roomId, 'members maxMembers');
+        if (!existing) throw new NotFoundException('ChatRoom not found');
+
+        const isMember = existing.members.some((m) => m.toString() === userId);
+        if (isMember) {
+          throw new ForbiddenException('You are already a member of this chat room');
+        }
+        if (existing.members.length >= existing.maxMembers) {
+          throw new ForbiddenException('ChatRoom is full');
+        }
+        throw new Error('Failed to join room');
+      }
       await Promise.all([
         this.redisService.del(`chatroom:${roomId}`),
         this.redisService.del(`chatrooms:${userId}`),
-        this.redisService.del(`chatrooms:${room.createdBy.toString()}`), // owner ka list cache
+        this.redisService.del(`chatrooms:${roomMeta.createdBy.toString()}`), // owner ka list cache
         this.redisService.delPattern('chatrooms:public:*'),
       ]);
-      return room;
+      return updateRoom;
     } catch (error) {
       throw error;
     }
@@ -207,6 +223,7 @@ export class ChatRoomService {
   async leaveRoom(roomId: string, userId: string) {
     try {
       const room = await this.chatroomModel.findById(roomId);
+      const userObjectId = new Types.ObjectId(userId)
       if (!room || !room.active)
         throw new NotFoundException('ChatRoom not found');
       const wasMember = room.members.some(
@@ -214,17 +231,25 @@ export class ChatRoomService {
       );
       if (!wasMember)
         throw new ForbiddenException('You are not a member of this chat room');
-      room.members = room.members.filter(
-        (member) => member.toString() !== userId,
-      );
-      await room.save();
+      const upadetdroom = await this.chatroomModel.findOneAndDelete(
+        {
+          _id: roomId,
+          members: userObjectId
+        }, {
+        $pull: { members: userObjectId },
+        returnDocument: 'after'
+      }
+      )
+      if (!upadetdroom) {
+        throw new Error('Failed to leave room');
+      }
       await Promise.all([
         this.redisService.del(`chatroom:${roomId}`),
         this.redisService.del(`chatrooms:${userId}`),
         this.redisService.del(`chatrooms:${room.createdBy.toString()}`), // owner ka list cache
         this.redisService.delPattern('chatrooms:public:*'),
       ]);
-      return room;
+      return upadetdroom;
     } catch (error) {
       throw error;
     }
